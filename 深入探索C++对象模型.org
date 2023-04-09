@@ -1,0 +1,126 @@
+#+TITLE: 深入探索 C++ 对象模型
+#+AUTHOR: ysouyno
+
+* <2023-04-09 周日> 页数索引
+
+| Chapter | Page | Range |
+|---------+------+-------|
+|       1 |   35 |    36 |
+|       2 |   71 |    46 |
+|       3 |  117 |    56 |
+|       4 |  173 |    52 |
+|       5 |  225 |    46 |
+|       6 |  271 |    42 |
+|       7 |  313 |    45 |
+|     All |  358 |       |
+#+TBLFM: @2$3..@>$3='(- @+1$2 @@#$2);N
+
+* <2023-04-03 周一> 第 68（34）页 虚函数可以为 inline 函数
+
+#+begin_quote
+当一个 base class object 被直接初始化为（或是被指定为）一个 derived class object 时，derived object 就会被切割（sliced），以塞入较小的 base type 内存中，derived type 将没有留下任何蛛丝马迹。多态于是不再呈现，而一个严格的编译器可以在编译时期解析一个“通过该 object 而触发的 virtual function 调用操作”，因而回避 virtual 机制。如果 virtual function 被定义为 inline，则更有效率上的大收获。
+#+end_quote
+
+原来这里是这样理解的：就是当派生类对象直接赋值给基类对象发生了切割，这时就没有了多态，而一个优秀的编译器就可以在编译阶段处理“原先根据 object 触发的 virtual function 调用操作”，这个操作虚函数在运行时决定的，现在在编译时就可以处理了，这样切割问题就回避了 virtual 机制；此时如果 virtual function 被定义为 inline，则更有效率了。（那说明 virtual 其实也是可以声明为 inline 函数的）
+
+ADT 程序风格的理解（如今被称为 object-based(OB)）：它也是一个类，只不过这个类没有虚函数，不支持多态，就像一个 struct，是一个数据集合，包含了封装的数据及操作数据的方法；也不支持类型扩充（按不支持派生理解）
+
+* <2023-04-04 周二> 第 78（44）页 default constructors
+
+#+begin_quote
+如果设计者提供多个 constructors，但其中都没有 default constructor 呢？编译器会扩张现有的每一个 constructors，将“用以调用所有必要之 default constructors”的程序代码加进去。它不会合成一个新的 default constructor，这是因为其它“由 user 所提供的 constructors”存在的缘故。如果同时亦存在着“带有 default constructors”的 member class objects，那些 default constructor 也会被调用-在所有 base class constructor 都被调用之后。
+#+end_quote
+
+* <2023-04-06 周四> 第 86（52）页 笔误
+
+原文为：
+
+#+begin_quote
+这种情况下并不需要合成出一个 default copy constructor，因为上述声明展现了“default copy semantics”
+#+end_quote
+
+应该为：
+
+#+begin_quote
+这种情况下并不需要合成出一个 default copy constructor，因为上述声明展现了“bitwise copy semantics”
+#+end_quote
+
+* <2023-04-07 周五> 第 101（67）页
+
+#+begin_quote
+这个程序的第一个版本不能实施 NRV 优化，因为 test class 缺少一个 copy constructor。
+#+end_quote
+
+** TODO 为什么 NRV 优化需要一个 copy constructor？
+
++ 这个说法太牵强：不管能不能优化，都要有拷贝构造函数，因为不能优化的话你的代码也要能运行。
+
+* <2023-04-08 周六> 第 104（70）页
+
+#+begin_quote
+在此情况下，对称性被优化给打破了：程序虽然比较快，却是错误的。
+#+end_quote
+
+** TODO 为什么是错误的？
+
++ 我的理解是：本来希望调用了拷贝构造函数生成了一个新对象，在退出时自动调用析构函数，那现在构造被优化掉了，对一个不存在对象调用析构函数不就错了嘛！
+
+* <2023-04-09 周日> 第 124（90）页
+
+#+begin_quote
+这个古老的语言规则被称为“member rewriting rule”，大意是“一个 inline 函数实体，在整个 class 声明未被完全看见之前，是不会被评估求值（evaluated）的”。C++ Standard 以“member scope resolution rules”来精炼这个“rewriting rule”，其效果是，如果一个 inline 函数在 class 声明之后立刻被定义的话，那么就还是对其评估求值（evaluate）。
+#+end_quote
+
+一开始没想明白，说着 extern int x; 怎么话锋一转就到了 inline 的话题了，这上面的这段又是什么意思？
+
+我的理解是：既然是 inline 函数，那么就意味着没有了函数调用，参数压栈等操作，那么 inline 函数里的变量（比如跟全局变量同名的变量）怎么绑定呢？上面这段话，就是回答的这个问题。所以防御性程序设计的第 1 点：
+
+#+begin_quote
+1，把所有的 data members 放在 class 声明起头处，以确保正确的绑定：
+#+end_quote
+
+就没有必要了，就像 emacs lisp 里的 let 和 let* 的意思一样了。一个是全部声明完再绑定，一个是边声明边绑定。
+
+上面所说针对的是类中的成员变量，但对于成员函数的参数就不是这样的说法了：
+
+#+begin_quote
+然而，这对于 member function 的 argument list 并不为真。Argument list 中的名称还是会在它们第一次遭遇时被适当的决议（resolved）完成，因此在 extern 和 nested type names 之间的非直觉绑定操作还是会发生。例如在下面的程序片段中，length 的类型在两个 member function signatures 中都决议（resolve）为 global typedef，也就是 int。当后续再有 length 的 nested typedef 声明出现时，C++ Standard 就把稍早的绑定标示为非法：
+
+代码略
+
+上述这种语言状况，仍然需要某种防御性程序风格：请始终把“nested type 声明”放在 class 的起始处。
+#+end_quote
+
+我试了一下在 VS2010 和 g++ 之间分别编译，前者警告后者报错。修改成将“nested type 声明”放在 class 的起始处后，都编译通过了，没有警告，没有报错。
+
+* <2023-04-09 周日> 第 127（93）页
+
+#+begin_quote
+C++ Standard 也允许编译器将多个 access sections 之中的 data members 自由排列，不必在乎它们出现在 class 声明中的次序。
+#+end_quote
+
+这个规定出乎意料，所以把它摘下来。
+
+* <2023-04-09 周日> 第 132（98）页
+
+** TODO 指向 data members 的指针
+
+#+begin_quote
+请注意其中的 -1 操作，指向 data member 的指针，其 offset 值总是被加上 1，这样可以使编译系统区分出“一个指向 data member 的指针，用以指出 class 的第一个 member”和“一个指向 data member 的指针，没有指出任何 member”两种情况，“指向 data members 的指针”将在 3.6 节有比较详细的讨论。
+#+end_quote
+
+等到了 3.6 节看结果。
+
+* TODO <2023-04-09 周日> 第 133（99）页
+
+#+begin_quote
+“从 origin 存取”和“从 pt 存取”有什么重大的差异？答案是“当 Point3d 是一个 derived class，而在其继承结构中有一个 virtual base class，并且被存取的 member（如本例的 x）是一个从该 virtual base class 继承而来的 member 时，就会有重大的差异”。这时候我们不能够说 pt 必然指向哪一种 class type（因此我们也就不知道编译时期这个 member 真正的 offset 位置），所以这个存取操作必须延迟至执行期，经由一个额外的间接导引，才能够解决。但如果使用 origin，就不会有这些问题，其类型无疑是 Point3d class，而即使它继承自 virtual base class，member 的 offset 位置也在编译时期就固定了。一个积极进取的编译器甚至可以静态地经由 origin 就解决掉对 x 的存取。
+#+end_quote
+
+这段似乎也听明白了，但似乎也没有明白。因为不知道 virtual base class 的具体做法，目前来看唯一提到 virtual base class 内存的仅在第 80（46）页的“‘带有一个 Virtual Base Class’ 的 Class”中提到，但是书中也只说了：
+
+#+begin_quote
+原先 cfront 的做法是靠“在 derived class object 的每一个 virtual base classes 中安插一个指针”完成。
+#+end_quote
+
+cfront 是被废弃的项目，那真正是如何实现的呢？所以我在这里暂时不能完全理解。
