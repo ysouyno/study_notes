@@ -2,13 +2,13 @@
 #+AUTHOR: ysouyno
 #+OPTIONS: ^:nil
 
-* Item 3: Use const whenever possible
+* <2023-03-31 周五> Item 3: Use const whenever possible
 
 放弃返回值上的 const 是安全的，因为调用非 const 函数，你首先得有一个非 const 对象，否则你没法调用非 const 函数，所以用非 const 函数调用 const 函数是安全的避免代码重复的方法，即使它需要强制转换。
 
 更进一步的解释为什么非 const 函数调用 const 函数是安全的？一个 const 函数承诺绝不改变对象的状态，而非 const 函数没有这样的承诺，如果你从 const 函数里调用非 const 函数，那么你承诺的不修改对象就被打破了。这就是为什么从 const 函数中调用非 const 函数是错误的。实际上当你使用 const_cast 去除 const 时这就是要发生错误的先兆。从非 const 函数调用 const 函数是安全的：非 const 函数可以对对象做它任何想做的事，所以调用一个 const 函数暗示没有风险。
 
-* Item 20: Prefer pass-by-reference-to-const to pass-by-value
+* <2023-03-31 周五> Item 20: Prefer pass-by-reference-to-const to pass-by-value
 
 通过传递引用同样避免了切片问题（即当一个派生类以值传递进一个基类，则调用了基类的拷贝构造函数，这样看来就像派生类对象被切掉了，剩下的只是一个简单的基类对象），因为这是基类的构造函数创建了它。
 
@@ -16,13 +16,13 @@
 
 注意如果函数是传值的话，那就意味着它对传进去的参数有保护作用，因为函数对参数的所有修改只针对参数副本本身，如果 Item 3 中提到的返回 char 本身对于 C++ 程序来说是合法的话，那么以值返回也不会有什么影响，因为那将意味着对副本进行修改而不是对象本身。
 
-* Item 27: Minimize casting.
+* <2023-03-31 周五> Item 27: Minimize casting.
 
 static_cast[fn:1] 是会创建临时对象的，所以有这个例子：如果在派生类对象的虚函数中要调用基类的同名函数，不需要对 *this 指针进行 static_cast 成基类对象再调用，因为这样的话会生成临时对象，如果此函数中有对对象内部状态有修改，则只是修改的临时对象。可以直接以 base::func() 这种方式进行调用。
 
 dynamic_cast 是所有 c++ 转换里唯一一个有性能损失的。
 
-* Item 4: Make sure that objects are initialized before they're used
+* <2023-03-31 周五> Item 4: Make sure that objects are initialized before they're used
 
 #+begin_quote
 A static object is one that exists from the time it's constructed until the end of the program. Stack and heap-based objects are thus excluded. Included are global objects, objects defined at namespace scope, objects declared static inside classes, objects declared static inside functions, and objects declared static at file scope. Static objects inside functions are known as local static objects (because they're local to a function), and the other kinds of static objects are known as non-local static objects. Static objects are destroyed when the program exits, i.e., their destructors are called when main finishes executing.
@@ -38,13 +38,13 @@ A static object is one that exists from the time it's constructed until the end 
 
 所以我那个在 EImage 代码里新添加的 init_glog 类（用于调用 google::InitGoogleLogging("name");）的代码做为 non-local static objects 没有问题，因为所以 VLOG 等宏都是函数中调用的，那么即使在不同的编译单元里也能始终保证 init_glog 会先执行。
 
-* Item 6: Explicitly disallow the use of compiler-generated functions you do not want
+* <2023-03-31 周五> Item 6: Explicitly disallow the use of compiler-generated functions you do not want
 
 为了防止对象调用拷贝构造函数，可以有两点处理：将拷贝构造函数声明为私有；只声明但不实现（因为不这样的话，成员函数，友元函数仍然可以调用私有函数）
 
 只声明不实现会引起链接错误，那要想在编译阶段就把问题暴露出来的话，可以将上面的两点放到基类里。
 
-* Item 7: Declare destructors virtual in polymorphic base classes
+* <2023-03-31 周五> Item 7: Declare destructors virtual in polymorphic base classes
 
 什么是工厂函数：返回基类指针的函数，该指针指向新创建的派生类对象。
 
@@ -56,7 +56,7 @@ C++ 明确指出，当派生类对象被删除时，它是通过一个不是虚�
 
 如果你有一个类想让它变成抽象类，但是你又没有任何纯虚函数（难道要生生弄也一个没必要的纯虚函数吗？）你弄一个纯虚析构函数不就行了嘛！注意这里一定要为这个基类的纯虚析构函数提供一个定义，因为编译器会在派生类的析构函数中生成一个基类析构函数的调用，如果你不提供这个定义的话，那么链接器就要开始抱怨了。
 
-* Item 9: Never call virtual functions during construction or destruction
+* <2023-03-31 周五> Item 9: Never call virtual functions during construction or destruction
 
 #+begin_quote
 An object doesn't become a derived class object until execution of a derived class constructor begins.
@@ -70,7 +70,7 @@ By making the function static, there's no danger of accidentally referring to th
 
 为什么要这么说呢？因为静态成员函数不能访问非静态成员变量，静态成员函数不是类对象的一部分，它是针对整个类而言，一个类的所有对象共用一份，所以声明为静态成员函数可以避免访问类对象未初始化变量的风险。
 
-* Item 11: Handle assignment to self in operator=
+* <2023-03-31 周五> Item 11: Handle assignment to self in operator=
 
 思考：如何实现安全地向自己拷贝？
 
@@ -82,7 +82,7 @@ Personally, I worry that this approach sacrifices clarity at the altar of clever
 
 上面这段话要怎么理解？似乎值传递并没有产生所谓的保护作用，反而编译有时会生成更加高效的代码？
 
-* Item 12: Copy all parts of an object
+* <2023-03-31 周五> Item 12: Copy all parts of an object
 
 如果你自己写拷贝构造函数，那么可能会受到编译器的报复：当你又新添加了一个成员变量，那么你自己的拷贝构造函数里也要增加对它的处理，编译器不会提醒你数据不全。
 
@@ -94,11 +94,11 @@ When you're writing a copying function, be sure to (1) copy all local data membe
 
 * TODOs
 
-** TODO Item 3: Item 20 中提到的传 const 引用比传值更有效有一个前提：只有当存在 const 成员函数用于操作得到的 const 对象时，该技术才可行。
+** TODO <2023-03-31 周五> Item 3: Item 20 中提到的传 const 引用比传值更有效有一个前提：只有当存在 const 成员函数用于操作得到的 const 对象时，该技术才可行。
 
-** TODO Item 27: static_cast 可以被用做强制隐式转换（这是什么意思？）
+** TODO <2023-03-31 周五> Item 27: static_cast 可以被用做强制隐式转换（这是什么意思？）
 
-** TODO 理解 copy and swap。
+** TODO <2023-03-31 周五> 理解 copy and swap。
 
 * Footnotes
 

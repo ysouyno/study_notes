@@ -15,7 +15,14 @@
 |     All |  358 |       |
 #+TBLFM: @2$3..@>$3='(- @+1$2 @@#$2);N
 
-* <2023-04-03 周一> 第 68（34）页 虚函数可以为 inline 函数
+* <2023-04-12 周三> 页码导航
+
+| Keyword                                                  |     Page |
+|----------------------------------------------------------+----------|
+| Virtual Inheritance, Pointer Strategy, 3.5a              | 155(121) |
+| Virtual Inheritance, Virtual Table Offset Strategy, 3.5b | 157(123) |
+
+* <2023-04-03 周一> 第 068（034）页
 
 #+begin_quote
 当一个 base class object 被直接初始化为（或是被指定为）一个 derived class object 时，derived object 就会被切割（sliced），以塞入较小的 base type 内存中，derived type 将没有留下任何蛛丝马迹。多态于是不再呈现，而一个严格的编译器可以在编译时期解析一个“通过该 object 而触发的 virtual function 调用操作”，因而回避 virtual 机制。如果 virtual function 被定义为 inline，则更有效率上的大收获。
@@ -23,15 +30,15 @@
 
 原来这里是这样理解的：就是当派生类对象直接赋值给基类对象发生了切割，这时就没有了多态，而一个优秀的编译器就可以在编译阶段处理“原先根据 object 触发的 virtual function 调用操作”，这个操作虚函数在运行时决定的，现在在编译时就可以处理了，这样切割问题就回避了 virtual 机制；此时如果 virtual function 被定义为 inline，则更有效率了。（那说明 virtual 其实也是可以声明为 inline 函数的）
 
-ADT 程序风格的理解（如今被称为 object-based(OB)）：它也是一个类，只不过这个类没有虚函数，不支持多态，就像一个 struct，是一个数据集合，包含了封装的数据及操作数据的方法；也不支持类型扩充（按不支持派生理解）
+ADT 程序风格的理解（如今被称为 object-based (OB)）：它也是一个类，只不过这个类没有虚函数，不支持多态，就像一个 struct，是一个数据集合，包含了封装的数据及操作数据的方法；也不支持类型扩充（按不支持派生理解）
 
-* <2023-04-04 周二> 第 78（44）页 default constructors
+* <2023-04-04 周二> 第 078（044）页
 
 #+begin_quote
 如果设计者提供多个 constructors，但其中都没有 default constructor 呢？编译器会扩张现有的每一个 constructors，将“用以调用所有必要之 default constructors”的程序代码加进去。它不会合成一个新的 default constructor，这是因为其它“由 user 所提供的 constructors”存在的缘故。如果同时亦存在着“带有 default constructors”的 member class objects，那些 default constructor 也会被调用-在所有 base class constructor 都被调用之后。
 #+end_quote
 
-* <2023-04-06 周四> 第 86（52）页 笔误
+* <2023-04-06 周四> 第 086（052）页
 
 原文为：
 
@@ -45,17 +52,18 @@ ADT 程序风格的理解（如今被称为 object-based(OB)）：它也是一�
 这种情况下并不需要合成出一个 default copy constructor，因为上述声明展现了“bitwise copy semantics”
 #+end_quote
 
-* <2023-04-07 周五> 第 101（67）页
+* <2023-04-07 周五> 第 101（067）页
 
 #+begin_quote
 这个程序的第一个版本不能实施 NRV 优化，因为 test class 缺少一个 copy constructor。
 #+end_quote
 
-** TODO 为什么 NRV 优化需要一个 copy constructor？
+** DONE 为什么 NRV 优化需要一个 copy constructor？
 
 + 这个说法太牵强：不管能不能优化，都要有拷贝构造函数，因为不能优化的话你的代码也要能运行。
++ 看来不光是我产生疑问，这里似乎解决了我的问题：[[https://www.cnblogs.com/cyttina/archive/2012/11/26/2790076.html][“关于 NRV 优化和 copy constructor”]]（<2023-04-11 周二>）。
 
-* <2023-04-08 周六> 第 104（70）页
+* <2023-04-08 周六> 第 104（070）页
 
 #+begin_quote
 在此情况下，对称性被优化给打破了：程序虽然比较快，却是错误的。
@@ -65,7 +73,7 @@ ADT 程序风格的理解（如今被称为 object-based(OB)）：它也是一�
 
 + 我的理解是：本来希望调用了拷贝构造函数生成了一个新对象，在退出时自动调用析构函数，那现在构造被优化掉了，对一个不存在对象调用析构函数不就错了嘛！
 
-* <2023-04-09 周日> 第 124（90）页
+* <2023-04-09 周日> 第 124（090）页
 
 #+begin_quote
 这个古老的语言规则被称为“member rewriting rule”，大意是“一个 inline 函数实体，在整个 class 声明未被完全看见之前，是不会被评估求值（evaluated）的”。C++ Standard 以“member scope resolution rules”来精炼这个“rewriting rule”，其效果是，如果一个 inline 函数在 class 声明之后立刻被定义的话，那么就还是对其评估求值（evaluate）。
@@ -93,7 +101,7 @@ ADT 程序风格的理解（如今被称为 object-based(OB)）：它也是一�
 
 我试了一下在 VS2010 和 g++ 之间分别编译，前者警告后者报错。修改成将“nested type 声明”放在 class 的起始处后，都编译通过了，没有警告，没有报错。
 
-* <2023-04-09 周日> 第 127（93）页
+* <2023-04-09 周日> 第 127（093）页
 
 #+begin_quote
 C++ Standard 也允许编译器将多个 access sections 之中的 data members 自由排列，不必在乎它们出现在 class 声明中的次序。
@@ -101,26 +109,287 @@ C++ Standard 也允许编译器将多个 access sections 之中的 data members 
 
 这个规定出乎意料，所以把它摘下来。
 
-* <2023-04-09 周日> 第 132（98）页
+* <2023-04-09 周日> 第 132（098）页
 
-** TODO 指向 data members 的指针
+** DONE 指向 data members 的指针<<todo_data_members>>
 
 #+begin_quote
 请注意其中的 -1 操作，指向 data member 的指针，其 offset 值总是被加上 1，这样可以使编译系统区分出“一个指向 data member 的指针，用以指出 class 的第一个 member”和“一个指向 data member 的指针，没有指出任何 member”两种情况，“指向 data members 的指针”将在 3.6 节有比较详细的讨论。
 #+end_quote
 
-等到了 3.6 节看结果。
+等到了 3.6 节看结果。见[[165_131][“第 165（131）页”]]
 
-* TODO <2023-04-09 周日> 第 133（99）页
+* DONE <2023-04-09 周日> 第 133（099）页<<133_099>>
 
 #+begin_quote
 “从 origin 存取”和“从 pt 存取”有什么重大的差异？答案是“当 Point3d 是一个 derived class，而在其继承结构中有一个 virtual base class，并且被存取的 member（如本例的 x）是一个从该 virtual base class 继承而来的 member 时，就会有重大的差异”。这时候我们不能够说 pt 必然指向哪一种 class type（因此我们也就不知道编译时期这个 member 真正的 offset 位置），所以这个存取操作必须延迟至执行期，经由一个额外的间接导引，才能够解决。但如果使用 origin，就不会有这些问题，其类型无疑是 Point3d class，而即使它继承自 virtual base class，member 的 offset 位置也在编译时期就固定了。一个积极进取的编译器甚至可以静态地经由 origin 就解决掉对 x 的存取。
 #+end_quote
 
-这段似乎也听明白了，但似乎也没有明白。因为不知道 virtual base class 的具体做法，目前来看唯一提到 virtual base class 内存的仅在第 80（46）页的“‘带有一个 Virtual Base Class’ 的 Class”中提到，但是书中也只说了：
+这段似乎也听明白了，但似乎也没有明白。因为不知道 virtual base class 的具体做法，目前来看唯一提到 virtual base class 内存的仅在第 080（046）页的“‘带有一个 Virtual Base Class’ 的 Class”中提到，但是书中也只说了：
 
 #+begin_quote
 原先 cfront 的做法是靠“在 derived class object 的每一个 virtual base classes 中安插一个指针”完成。
 #+end_quote
 
-cfront 是被废弃的项目，那真正是如何实现的呢？所以我在这里暂时不能完全理解。
+那真正是如何实现的呢？所以我在这里暂时不能完全理解。
+
+* <2023-04-10 周一> 第 147（113）页
+
+#+begin_quote
+多重继承的问题主要发生于 derived class objects 和其第二或后继的 base class objects 之间的转换；
+#+end_quote
+
+这里的意思是指：
+
+#+begin_src c++
+  class X : public Y, public Z {};
+#+end_src
+
+将 X 转化为 Z，这是“不自然的”。
+
+#+begin_quote
+第 146（112）页：
+多重继承的复杂度在于 derived class 和其上一个 base class 乃至于上上一个 base class 之间的“非自然”关系。
+#+end_quote
+
+* <2023-04-10 周一> 第 156（122）页
+
+#+begin_quote
+经由一个非多态的 class object 来存取一个继承而来的 virtual base class 的 member，像这样：
+#+begin_src c++
+  Point3d origin; // 见第 152（118）页的定义
+  ...
+  origin._x;
+#+end_src
+可以被优化为一个直接存取操作，就好像一个经由对象调用的 virtual function 调用操作，可以在编译时期被决议（resolved）完成一样。在这次存取以及下一次存取之间，对象的类型不可以改变，所以“virtual base class subobjects 的位置会变化”的问题在这种情况下就不再存在了。
+#+end_quote
+
+这里似乎解决了在[[133_099][“第 133（099）页”]]中提到的疑问。
+
+我的理解是：无论在图 3.5a 的实现还是图 3.5b 的实现中，对于 Point3d 类型的变量（不是指针），似乎在同一实现中都可以从 &origin 的地址计算出 _x 的地址，且都是不会变化的。所以原文会说“可以在编译时期被决议”。
+
+* <2023-04-10 周一> 第 165（131）页<<165_131>>
+
+上面提到[[todo_data_members][“指向 data members 的指针”]]中讲到为什么要有 -1 的操作，就是因为：
+
+#+begin_quote
+问题在于，如何区分一个“没有指向任何 data member”的指针和一个指向“第一个 data member”的指针？考虑这样的例子：
+#+begin_src c++
+  float Point3d::*p1 = 0;
+  float Point3d::*p2 = &Point3d::x;
+
+  if (p1 == p2) {
+      std::cout << "p1 & p2 contain the same value --" ;
+      std::cout << "they must address the same member!\n";
+  }
+#+end_src
+为了区分 p1 和 p2，每一个真正的 member offset 值都被加上 1，因此，不论编译器或使用都都必须记住，在真正使用该值以指出一个 member 之前，请先减掉 1。
+#+end_quote
+
+这里说的比较好理解，p1 没有指向任何对象，但是 p2 指向的第一个成员变量，如果虚表不在对象头部，那么 p2 虽然指向第一个成员变量，但是它的值是 0，与 p1 没有指向任何变量值也为 0 的情况，值相同了，所以人为加上了 1 以示区别。
+
+* <2023-04-10 周一> 第 166（132）页
+
+对类成员变量取地址和对类对象成员变量取地址是不一样的：
++ 前者得到偏移量；后者得到内存地址
++ 前者类型是（float Point3d::*），后者类型是（float *）
+
+* <2023-04-10 周一> 第 167（133）页
+
+正如译注所说，我在 VS2010 和 g++ 上都没有得到为 1 的情况。虽然没能亲自测试，但是这里的例子确实看懂了。请见原书 func2 函数的注释说明。
+
+* <2023-04-11 周二> 第 182（148）页
+
+上一页结尾提到：
+
+#+begin_quote
+如果 magnitude() 声明为 inline 函数会更有效率。使用 class scope operator 明确调用一个 virtual function，其决议（resolved）方式会和 nonstatic member function 一样。
+#+end_quote
+
+这一页又提到：
+
+#+begin_quote
+所以上述经由 obj 调用的函数实体只可以是 Point3d::normalize()。“经由一个 class object 调用一个 virtual function”，这种操作应该总是被编译器像对待一般的 nonstatic member function 一样地加以决议（resolved）：
+#+end_quote
+
+这里的“Point3d::normalize()”就是上一页提到的“使用 class scope operator 明确调用一个 virtual function”，normalize() 是一个虚函数，因为第 181（147）页有一个假设：
+
+#+begin_quote
+如果 normalize() 是一个 virtual member function，那么以下的调用：
+#+end_quote
+
+* DONE <2023-04-11 周二> 第 194（160）页
+
+#+begin_quote
+然而时至今日，C++ 标准已针对此项做了修改，为的是容许所谓的虚拟构造函数（virtual constructor），参见 p.166。
+#+end_quote
+
+居然还有“虚拟构造函数（virtual constructor）”，这个要好好学学。<<194_160>>
+
+* <2023-04-11 周二> 第 200（166）页<<200_166>>
+
+#+begin_quote
+稍早我曾写道，有三种情况，第二或后继的 base class 会影响对 virtual functions 的支持。第一种情况是，通过一个“”的指针，调用 derived class virtual function。
+#+end_quote
+
+要不是有这么句话，还不能把自己从云里雾里里喊出来。这里的“稍早”指第 195（161）页：
+
+#+begin_quote
+“Derived 支持 virtual functions”的困难度，统统落在 Base2 subobject 身上。有三个问题需要解决，以此例而言分别是（1）virtual destructor，（2）被继承下来的 Base2::mumble()，（3）一组 clone() 函数实体。让我依次解决每一个问题。
+#+end_quote
+
+奇怪，我没在这页找到[[194_160][“虚拟构造函数（virtual constructor）”]]的说明呀！
+
+注（<2023-04-12 周三>）：我没见过 virtual constructor，所以不认识原来情况（3）一组 clone() 函数实体，它就是 virtual constructor，即：
+
+#+begin_quote
+第三种情况发生于一个语言扩充性质之下：允许一个 virtual function 的返回值类型有所变化，可能是 base type，也可能是 publicly derived type。这一点可以通过 Derived::clone() 函数实体来说明。clone 函数的 Derived 版本传回一个 Derived class 指针，默默地改写了它的两个 base class 函数实体。
+#+end_quote
+
+* <2023-04-11 周二> 第 201（167）页
+
+#+begin_quote
+当函数被认为“足够小”的时候，Sun 编译器会提供一个所谓的“split functions”技术：以相同算法产生出两个函数，其中第二个在返回之前，为指针加上必要的 offset，于是不论通过 Base1 指针或 Derived 指针调用函数，都不需要调整返回值；而通过 Base2 指针调用的，是另一个函数。
+#+end_quote
+
+我怎么感觉这页的内容我都没看懂！就只是粗略讲了 Sun，IBM 还有 Microsoft 的各自策略而已。但是对于[[200_166][“第 200（166）页”]]中提到的三个情况的难度我是懂了的。这三个情况确实好难！
+
+* <2023-04-11 周二> 第 203（169）页
+
+对于 4.2 的内容似乎我也不用那么认真，一因为候捷自己也相当疑惑，不禁译注一下；二因为作者也觉得很难：
+
+#+begin_quote
+当一个 virtual base class 从另一个 virtual base class 派生出来，并且两者都支持 virtual functions 和 nonstatic data members 时，编译器对于 virtual base class 的支持简直就像进了迷宫一样。虽然我手上有一整柜带有答案的例程，并且有一个以上的算法可以决定适当的 offset 以及各种调整，但这些素材实在太过诡谲迷离，不适合在此处讨论！我的建议是，不要在一个 virtual base class 中声明 nonstatic data members。如果这么做，你会距离复杂的深渊愈来愈近，终不可拔。
+#+end_quote
+
+因此我觉得这 4.2 的内容我只要知道编译器需要适当的调整 this 指针即可。
+
+* <2023-04-12 周三> 第 198（164）页
+
+今天二读 4.2，发现今天才看懂这句话：
+
+#+begin_quote
+在多重继承之下，一个 derived class 内含 n-1 个额外的 virtual tables，n 表示其上一层 base classes 的数目（因此，单一继承将不会有额外的 virtual tables）。对于本例之 Derived 而言，会有两个 virtual tables 被编译器产生出来。
+#+end_quote
+
+注意上面的措辞，“n-1 个额外的”，这个“额外”有点隐蔽，意思就是除了你知道的那 1 个 virtual table，还有 n-1 个额外的，那这句话的意思不就是有 1+(n-1) 个，结果不就是 n 个嘛，所以 Derived 由 Base1 和 Base2 共同派生，它有 2 个 virtual tables 被编译器产生出来。
+
+刚想说翻译的时候能不能不要这么晦涩，可以原文就是这样，你让译者怎么弄呢？
+
+#+begin_quote
+Under multiple inheritance, a derived class contains n – 1 additional virtual tables, where n represents the number of its immediate base classes (thus single inheritance introduces zero additional tables). For the Derived class, then, two virtual tables are generated:
+#+end_quote
+
+* <2023-04-12 周三> 第 209（175）页
+
+什么是“member-selection operators”运算符？见[[https://learn.microsoft.com/zh-cn/previous-versions/visualstudio/visual-studio-2008/fk812w4w(v=vs.90)][“Member Functions (C++)”]]：
+
+#+begin_quote
+member-selection operators (. and –>)
+#+end_quote
+
+原文中的“指向‘member selection 运算符’的指针”：
+
+#+begin_quote
+指向 member function 的指针的声明语法，以及指向“member selection 运算符”的指针，其作用是作为 this 指针的空间保留着。
+#+end_quote
+
+即是：
+
+#+begin_quote
+pointer-to-member selection operators (.* and ->*)
+#+end_quote
+
+* <2023-04-12 周三> 第 212（178）页
+
+#+begin_quote
+在 cfront 2.0 非正式版中，这两个值被内含在一个普通的指针内。cfront 如何识别该值是内存地址还是 virtual table 索引呢？它使用了如下技巧：
+#+begin_src c++
+  ((( int ) pmf ) & ~127 )
+  ? // non-virtual invocation
+  ( *pmf )( ptr )
+  : // virtual invocation
+  ( * ptr->vptr[ (int) pmf ]( ptr );
+#+end_src
+#+end_quote
+
+这个技巧我可以学学，127 的二进制是 0111 1111，那 ~127 就是 1000 0000，如果 pmf 是内存地址的话，那么 ((( int ) pmf ) & ~127 ) 的值肯定不为 0，所以调用 ( *pmf )( ptr )。
+
+* <2023-04-12 周三> 第 217（183）页
+
+这里介绍了编译器如果处理 inline 请求：
+
+#+begin_quote
+当我说“编译器相信它可以合理地扩展一个 inline 函数”时，我的意思是在某个层次上，其执行成本比一般的函数调用及返回机制所还来的负荷低，cfront 有一套复杂的测试法，通常是用来计算 assignments、function calls、virtual function calls 等操作的次数。每个表达式（expression）种类有一个权值，而 inline 函数的复杂度就以这些操作的总和来决定。
+#+end_quote
+
+* <2023-04-12 周三> 第 222（188）页
+
+#+begin_quote
+Inline 函数对于封装提供了一种必要的支持，可以有效存取封装于 class 中的 nonpublic 数据，它同时也是 C 程序中大量使用的 #define（前置处理宏）的一个安全代替品，特别是如果宏中的参数有副作用的话。
+#+end_quote
+
+重点是：“nonpublic 数据”。
+
+* <2023-04-13 周四> 第 227（193）页
+
+我说怎么有点印象呢，原来在我的另一篇读书笔记《Effective  C++》的[[file:effective_cpp.org][“<2023-03-31 周五> Item 7: Declare destructors virtual in polymorphic base classes”]]提到了“纯虚析构函数必须要有定义”，这里说明了具体原因：
+
+#+begin_quote
+要不要这样做，全由 class 设计者决定，唯一的例外就是 pure virtual destructor：class 设计者一定得定义它。为什么？因为每一个 derived class destructor 会被编译加以扩展，以静态调用的方式调用其“每一个 virtual base class”以及“上一层 base class”的 destructor。因此，只要缺乏任何一个 base class destructor 的定义，就会导致链接失败。
+#+end_quote
+
+* TODO <2023-04-13 周四> 第 228（194）页
+
+#+begin_quote
+如果你决定把 Abstract_base::mumble() 设计为一个 virtual function，那将是一个糟糕的选择，因为其函数定义内容并不与类型有关，因而几乎不会被后继的 derived class 改写。此外，由于它的 non-virtual 函数实体是一个 inline 函数，如果常常被调用的话，效率上的报应实在不轻。
+#+end_quote
+
+不怎么看得懂这里，把原文翻出来，我的天，原文这里却是 Abstract_base::mumble_set()，这个函数又是从哪里来的？就按译文来说  Abstract_base::mumble() 这个函数的 non-virtual 的函数实体是指啥？它为什么是一个 inline 函数？
+
+* <2023-04-13 周四> 第 229（195）页
+
+原来从第 5 章开头到这里就是讲了一件事，怎么优化代码，将：
+
+#+begin_src c++
+  class Abstract_base {
+      public:
+          virtual ~Abstract_base() = 0;
+          virtual void interface() const = 0;
+          virtual const char* mumble() const { return _mumble; }
+      protected:
+          char *_mumble;
+  };
+#+end_src
+
+调整为：
+
+#+begin_src c++
+  class Abstract_base {
+      public:
+          virtual ~Abstract_base(); // 不再是 pure
+          virtual void interface() = 0; // 不再是 const
+          const char* mumble() const { return _mumble; } // 不再是 virtual
+      protected:
+          Abstract_base( char *pc = 0 ); // 新增一个带有唯一参数的 constructor
+          char *_mumble;
+  };
+#+end_src
+
+* <2023-04-13 周四> 第 231（197）页
+
+#+begin_quote
+唔，只有一个小小的例外。在 C 之中，global 被视为一个“临时性的定义”，因为它没有明确的初始化操作。一个“临时性的定义”可以在程序中发生多次，那些实例会被链接器折叠起来，只留下单独一个实体，被放在程序 data segment 中一个“特别保留给未初始化之 global object 使用”的空间，由于历史的缘故，这块空间被称为 BSS，这是 Block Started by Symbol 的缩写，是 IBM 704 assembler 的一个 pseudo-op。
+
+C++ 并不支持“临时性的定义”，这是因为 class 构造行为的隐含应用之故。
+#+end_quote
+
+按此说法分别在 .c 和 .cpp 文件中测试发现：在 .c 中连续两次声明一个全局变量时，编译运行都不报错，但是在 .cpp 中编译会提示：“error: redefinition of 'int a'”之类的错误。
+
+* <2023-04-13 周四> 第 234（200）页
+
+#+begin_quote
+local1 的初始化操作会比 local2 的高效。这是因为当函数的 activation record 被放进程序堆栈时，上述 initialization list 中的常量就可以被放进 local1 内存中了。
+#+end_quote
+
+我花了两分钟了解了什么是“[[https://www.geeksforgeeks.org/access-links-and-control-links/][Activation Records]]”。
