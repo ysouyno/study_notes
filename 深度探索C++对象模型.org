@@ -1,5 +1,6 @@
-#+TITLE: 深入探索 C++ 对象模型
+#+TITLE: 深度探索 C++ 对象模型
 #+AUTHOR: ysouyno
+#+OPTIONS: ^:nil
 
 * <2023-04-09 周日> 页数索引
 
@@ -17,10 +18,11 @@
 
 * <2023-04-12 周三> 页码导航
 
-| Keyword                                                  |     Page |
-|----------------------------------------------------------+----------|
-| Virtual Inheritance, Pointer Strategy, 3.5a              | 155(121) |
-| Virtual Inheritance, Virtual Table Offset Strategy, 3.5b | 157(123) |
+| Keyword                                                  | Page      |
+|----------------------------------------------------------+-----------|
+| Virtual Inheritance, Pointer Strategy, 3.5a              | 155 (121) |
+| Virtual Inheritance, Virtual Table Offset Strategy, 3.5b | 157 (123) |
+| thunk                                                    | 196 (162) |
 
 * <2023-04-03 周一> 第 068（034）页
 
@@ -37,6 +39,24 @@ ADT 程序风格的理解（如今被称为 object-based (OB)）：它也是一�
 #+begin_quote
 如果设计者提供多个 constructors，但其中都没有 default constructor 呢？编译器会扩张现有的每一个 constructors，将“用以调用所有必要之 default constructors”的程序代码加进去。它不会合成一个新的 default constructor，这是因为其它“由 user 所提供的 constructors”存在的缘故。如果同时亦存在着“带有 default constructors”的 member class objects，那些 default constructor 也会被调用-在所有 base class constructor 都被调用之后。
 #+end_quote
+
+* <2023-04-18 周二> 第 084（050）页
+
+从[[239_205][“第 239（205）页”]]回过头来再看这里，似乎能看懂了这里的意思了。
+
+#+begin_quote
+一个良好的编译器可以为大部分 class objects 产生出 bitwise copies，因为它们有 bitwise copy semantics……
+
+也就是说，“如果一个 class 未定义出 copy constructor，编译器就自动为它产生出一个”这句话不对，而是应该像 ARM 所说：
+
+Default constructors 和 copy constructors 在必要的时候才由编译器产生出来。
+
+这个句子中的“必要”意指当 class 不展现 bitwise copy semantics 时。
+#+end_quote
+
+重点就是这句话我认为：“这个句子中的‘必要’意指当 class 不展现 bitwise copy semantics 时。”
+
+我的理解是：如果由编译器为你生成拷贝构造函数的话，该生成的拷贝构造函数是 memberwise 的，而上面提到：“一个良好的编译器可以为大部分 class objects 产生出 bitwise copies”，是指良好的编译器在不生成拷贝构造函数的前提下提供了很棒的 bitwise copies，棒得已经不用再合成拷贝构造函数了就达到拷贝构造的效果了。
 
 * <2023-04-06 周四> 第 086（052）页
 
@@ -386,6 +406,20 @@ C++ 并不支持“临时性的定义”，这是因为 class 构造行为的隐
 
 按此说法分别在 .c 和 .cpp 文件中测试发现：在 .c 中连续两次声明一个全局变量时，编译运行都不报错，但是在 .cpp 中编译会提示：“error: redefinition of 'int a'”之类的错误。
 
+* DONE <2023-04-18 周二> 第 232（198）页<<232_198>>
+
+#+begin_quote
+再一次容我强调，并没有 default constructor 施行于 new 运算符所传回的 Point object 身上。
+#+end_quote
+
+据我所知，new 运算符将会调用构造函数，这里为什么这么说？
+
+#+begin_quote
+观念上，这样的操作会触发 Point 的 trivial destructor。但一如我们所见，destructor 要不是没有被产生就是没有被调用。
+#+end_quote
+
+这里同上一行的疑问？难道 Plain Ol' Data 就是这样的情况？
+
 * <2023-04-13 周四> 第 234（200）页
 
 #+begin_quote
@@ -393,3 +427,165 @@ local1 的初始化操作会比 local2 的高效。这是因为当函数的 acti
 #+end_quote
 
 我花了两分钟了解了什么是“[[https://www.geeksforgeeks.org/access-links-and-control-links/][Activation Records]]”。
+
+* <2023-04-18 周二> 第 235（201）页
+
+#+begin_quote
+现在则被附加一个“对 default Point constructor 的有条件调用操作”：
+#+begin_src c++
+  // C++ 伪码
+  Point *heap = __new(sizeof(Point));
+  if (heap != 0)
+      heap->Point::Point();
+#+end_src
+#+end_quote
+
+这里的 new 就会调用构造函数了，而在[[232_198][“第 232（198）页”]]却不行，因为它是 Plain Ol' Data，正如本页最后所言：
+
+#+begin_quote
+观念上，我们的 Point class 有一个相关的 default copy constructor、copy operator 和 destructor，然而它们都是无关痛痒的（trivial），而且编译器实际上根本没有产生它们。
+#+end_quote
+
+因为是 trivial 的，编译器不会产生它们，所以就不会有调用喽！
+
+* <2023-04-18 周二> 第 239（205）页<<239_205>>
+
+这整个“5.1 ‘无继承’情况下的对象构造”到底在讲什么？其实就是：
+
+#+begin_src c++
+  Point global;
+
+  Point foobar() {
+      Point local;
+      Point *heap = new Point;
+      ,*heap = local;
+      // ... stuff ...
+      delete heap;
+      return local;
+  }
+#+end_src
+
+在三种不同的 Point 定义下的不同行为：
++ Plain Ol' Data
++ 抽象数据类型（Abstract Data Type）
++ 带有虚函数的继承
+
+* <2023-04-19 周三> 第 247（213）页
+
+#+begin_quote
+时，Vertex3d constructor 正确地调用 Point constructor。Point3d 和 Vertex 的 constructors 会做每一件该做的事情-对 Point 的调用除外。
+#+end_quote
+
+看不明白上面这段话，原文：
+
+#+begin_quote
+the Vertex3d constructor correctly invokes the Point constructor. The Point3d and Vertex constructors do everything but that invocation.
+#+end_quote
+
+翻译的意思应该是：Vertex3d constructor 正确的调用了 Point 的 constructor，而 Point3d 和 Vertex 的 constructors 做了除调用 Point constructor 这件事情之外的所有事情。
+
+#+begin_quote
+我想许多人已经注意到了某种状态。在这种状态中，“virtual base class constructors 的被调用”有着明确的定义：只有当一个完整的 class object 被定义出来（例如 origin）时，它才会被调用；如果 object 只是某个完整 object 的 subobject，它就不会被调用。
+#+end_quote
+
+* TODO <2023-04-19 周三> 第 252（218）页
+
+这一页开始突然看不懂了：
+
+#+begin_quote
+这就完美地解决了我们所说的有关限制虚拟机制的问题。但是，这真是一个完美的解答吗？假设我们的 Point constructor 定义为：
+#+end_quote
+
+那一直在讲的 Point constructor 的定义是啥？
+
+应该重点理解它：
+
+#+begin_quote
+如果我们声明一个 PVertex 对象，然后由于我们对其 base class constructors 的最新定义，其 vptr 将不再需要在每一个 base class constructor 中被设定。解决之道是把 constructor 分裂为一个完整 object 实体和一个 subobject 实体。在 subobject 实体中，vptr 的设定可以忽略（如果可能的话）。
+#+end_quote
+
+我在 windows 和 linux 下都进行了测试，发现这两个平台的实现是不一样的，windows 的实现跟书中的伪代码相似，而 linux 下似乎使用了 thunk 技术（见第 196（162）页，即在需要调用 this 指针的地方，通过 ida-free （通过 yay -S ida-free 来安装）反编译可以看到有多个 Vertex3d 的 vptr）。
+
+因此按照上面这段话我在 windows 的反编译结果与它不符，每个 base class constructor 中都有设定 vptr，而 linux 的反编译结果似乎不这样，并没有在每个 base class constructors 中都设定 vptr。之所以不能肯定是因为：
+
+#+begin_src c++
+  void __fastcall Vertex::Vertex(Vertex *this, float a2, float a3, float a4, _QWORD *a5)
+  {
+      ,*(_QWORD *)this = *a5;
+      ,*(_QWORD *)((char *)this + *(_QWORD *)(*(_QWORD *)this - 24LL)) = a5[1];
+      ,*((float *)this + 2) = a4;
+      Vertex::size(this);
+  }
+#+end_src
+
+这里的 *a5 不是 vptr，而下面的 off_3CE8 是 vptr：
+
+#+begin_src c++
+  void __fastcall Point::Point(Point *this, float a2, float a3)
+  {
+      ,*(_QWORD *)this = off_3CE8;
+      ,*((float *)this + 2) = a2;
+      ,*((float *)this + 3) = a3;
+      Point::size(this);
+  }
+#+end_src
+
+（注：C-M-\ 格式化代码后星号前都有一个逗号，阅读时请忽略这些逗号，不过，庆幸的是这些逗号在导出网页后是不可见的）。
+
+* <2023-04-20 周四> 第 254（220）页
+
+#+begin_quote
+C++ Standard 上说 copy assignment operators 并不表示 bitwise copy semantics 是 nontrivial。实际上，只有 nontrivial instances 才会被合成出来。
+#+end_quote
+
+#+begin_quote
+The Standard speaks of copy assignment operators' not exhibiting bitwise copy semantics as nontrivial. In practice, only nontrivial instances are synthesized.
+#+end_quote
+
+我的理解是：C++ 标准说具有 bitwise copy semantics 的赋值操作符不一定是 nontrivial 的，但是被编译器合成出来的赋值操作符肯定是 nontrivial。
+
+* <2023-04-20 周四> 第 255（221）页
+
+#+begin_quote
+由 bitwise copy 完成，（略）。注意，我们还是可能提供一个 copy constructor，为的是把 name return value（NRV）优化打开。copy constructor 的出现不应该让我们也一定要提供一个 copy assignment operator。
+#+end_quote
+
+这里没啥，主要是提醒文中一个讲的是 copy constructor，一个讲的是 copy assignment operator，不要混淆。
+
+* <2023-04-20 周四> 第 256（222）页
+
+#+begin_quote
+缺少 copy assignment list，看来或许只是一件小事，但如果没有它，编译器一般而言就没有办法压抑上一层 base class 的 copy operators 被调用。
+#+end_quote
+
+我的理解是：不能像上面说的使用 member initialization list 那样在构造时增加一个 bool 类型的参数 __most__derived 来决定虚拟继承时是否要调用基类的构造函数。
+
+* TODO <2023-04-20 周四> 第 257（223）页
+
+#+begin_quote
+编译器如何能够在 Point3d 和 Vertex 的 copy assignment operators 中压抑 Point 的 copy assignment operators 呢？编译器不能够重复传统的 constructor 解决方案（附加上额外的参数）。这是因为，和 constructor 以及 destructor 不同的是，“取 copy assignment operator 地址”的操作是合法的。因此，下面这个例子是毫无瑕疵的合法程序代码（虽然它也毫无瑕疵地推翻了我们希望把 copy assignment operator 做得更灵巧的企图）：
+#+begin_src c++
+  typedef Point3d&(Point3d::*pmfPoint3d)(const Point3d&);
+
+  pmfPoint3d pmf = &Point3d::operator=;
+  (x.*pmf)(x);
+#+end_src
+#+end_quote
+
+这里要怎么理解：因为 constructor 和 destructor 不能被取地址，所以才有增加额外参数 __most_derived 的方案来解决压抑基类构造函数的调用？
+
+* <2023-04-20 周四> 第 258（224）页
+
+看到这里我轻松了下来，因为：
+
+#+begin_quote
+事实上，（略）。许多编译器甚至并不尝试取得正确的语意，它们在每一个中间（调停用）的 copy assignment operator 中调用每一个 base class instance，于是造成 virtual base class copy assignment operator 的多个实体被调用。
+#+end_quote
+
+* <2023-04-20 周四> 第 259（225）页
+
+#+begin_quote
+我建议尽可能不要允许一个 virtual base class 的拷贝操作。我甚至提供一个比较奇怪的建议：不要在任何 virtual base class 中声明数据。
+#+end_quote
+
+作者建议的很对！珍爱生命，远离 virtual base class！
