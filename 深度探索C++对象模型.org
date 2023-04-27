@@ -23,6 +23,7 @@
 | Virtual Inheritance, Pointer Strategy, 3.5a              | 155 (121) |
 | Virtual Inheritance, Virtual Table Offset Strategy, 3.5b | 157 (123) |
 | thunk                                                    | 196 (162) |
+| C++ Object Model                                         | 044 (010) |
 
 * <2023-04-03 周一> 第 068（034）页
 
@@ -589,3 +590,206 @@ The Standard speaks of copy assignment operators' not exhibiting bitwise copy se
 #+end_quote
 
 作者建议的很对！珍爱生命，远离 virtual base class！
+
+* <2023-04-21 周五> 第 265（231）页
+
+#+begin_quote
+如果 class 没有定义 destructor，那么只有在 class 内带的 member object（或是 class 自己的 base class）拥有 destructor 的情况下，编译器才会自动合成出一个来。否则，destructor 会被视为不需要，也就不需被合成（当然更不需要被调用）。
+#+end_quote
+
+相比前面的构造函数，拷贝构造函数等等的复杂度，这里的析构函数是否被编译器合成出来的规则也太简单了吧。
+
+* <2023-04-21 周五> 第 276（242）页
+
+看了大半天了，我刚理解为什么这里讲的会是“静态初始化”，而现在才看见“内存释放操作”这几个字：
+
+#+begin_quote
+C++ 保证，（略）。像 identity 这样的所谓 global object 如果有 constructor 和 destructor 的话，我们就说它需要静态初始化和内存释放操作。
+#+end_quote
+
+然后接下来的几页都在围绕“静态初始化和内存释放操作”而展开，那为什么讲这个呢？答案就在这页的最后一段里，方便我理解的说法就是：C 语言的全局变量可以在编译时通过常量表达式来求值，但是 C++ 的全局变量要怎么初始化呢？编译期间就运行构造函数求值吗？这显然不可能，所以就需要静态初始化。
+
+#+begin_quote
+v1 和 v2 都被配置于程序的 data segment，（略）。在 C 语言中一个 global object 只能够被一个常量表达式（可在编译时期求其值的那种）设定初值。当然，constructor 并不是常量表达式。虽然 class object 在编译时期可以被放置于 data segment 中并且内容为 0，但 constructor 一直要到程序激活（startup）时才会实施。必须对一个“放置于 program data segment 中的 object 的初始化表达式”做评估（evaluate），这正是为什么一个 object 需要静态初始化的原因。
+#+end_quote
+
+* <2023-04-21 周五> 第 281（247）页
+
+#+begin_quote
+使用被静态初始化的 objects 有一些缺点。（略）。我建议你根本就不要用那些需要静态初始化的 global objects（虽然这项建议几乎普遍地不为 C 程序员所接受）。
+#+end_quote
+
+* <2023-04-21 周五> 第 283（249）页
+
+这里学到了：对于“局部静态变量”在用到时才被初始化，它的内部是怎么实现的！
+
+#+begin_src c++
+  // generated temporary static object guard
+  static struct Matrix *__0__F3 = 0 ;
+  // the C analog to a reference is a pointer
+  // identity()'s name is mangled based on signature
+  struct Matrix*
+  identity__Fv ()
+  {
+      // the __1 reflects the lexical level
+      // this permitted support for code such as
+      // int val;
+      // int f() { int val;
+      // return val + ::val; }
+      // where the last line becomes
+      // ....return __1val + val;
+      static struct Matrix __1mat_identity ;
+      // if the guard is set, do nothing, else
+      // (a) invoke the constructor: __ct__6MatrixFv
+      // (b) set the guard to address the object
+      __0__F3
+          ? 0
+          :(__ct__1MatrixFv ( & __1mat_identity ),
+            (__0__F3 = (&__1mat_identity)));
+      // ...
+  }
+
+  char __std__stat_0_c_j ()
+  {
+      __0__F3
+          ? __dt__6MatrixFv( __0__F3 , 2)
+          : 0 ;
+      // ...
+  }
+#+end_src
+
+* TODO <2023-04-21 周五> 第 296（262）页
+
+#+begin_src c++
+  // 喔欧：这并不是我们所要的
+  // 只有 Point::~Point 被调用
+  delete [] ptr;
+#+end_src
+
+为什么这里说：“只有 Point::~Point 被调用”？我写了测试代码明明连 Point3d::~Point3d 也被调用了呀！
+
+答案就在下页，就是对象大小的原因。我想说的是书中提到的这个难道是 cfront 的行为？对于不同的编译器表现出来的效果是不一样的嘛？
+
+* TODO <2023-04-22 周六> 第 298（264）页
+
+#+begin_quote
+Placement new operator 所扩充的另一半边是将 Point2w constructor 自动实施于 arena 所指的地址上：
+#+begin_src c++
+  // Pseudo C++ code
+  Point2w ptw = ( Point2w* ) arena;
+  if ( ptw != 0 )
+      ptw->Point2w::Point2w();
+#+end_src
+这正是使 placement operator new 威力如此强大的原因。这一份码决定 objects 被放置在哪里；编译系统保证 object 的 constructor 会施行于其上。
+#+end_quote
+
+这里需要亲自尝试一下。
+
+* <2023-04-22 周六> 第 301（267）页
+
+#+begin_quote
+placement new operator 的这种使用方式在 Standard C++ 中未能获得支持（请看 C++ Standard 3.8 节）。于是上述程序的行为没有明确定义：我们不能够斩钉截铁的说哪一个 f() 函数实体会被调用。尽管在部分使用者可能以为调用的是 Derived::f()，但大部分编译器调用的却是 Base::f()。
+#+end_quote
+
+placement new operator 的存在意义是什么？好像很少用得到呀！
+
+* TODO <2023-04-22 周六> 第 302（268）页
+
+这段话看不懂，但又好像看懂了：
+
+#+begin_quote
+标示为（1）的那一行，未构造的临时对象被赋值给 operator+()。这意思是要不是“表达式的结果被 copy constructed 至临时对象中”，就是“以临时对象取代 NRV”。在后者中，原本要施行于 NRV 的 constructor，现在将施行于该临时对象。
+#+end_quote
+
+* <2023-04-22 周六> 第 303（269）页
+
+就是说 assignment 操作不太好，因为可能会：
+
+#+begin_quote
+copy constructor、destructor 以及 copy assignment operator 都可以由使用者供应，所以不能够保证上述两个操作导致相同的语意。因此，以一连串的 destruction 和 copy construction 来取代 assignment，一般而言是不安全的，而且会产生临时对象，所以这样的初始化操作：
+#+begin_src c++
+  T c = a + b;
+#+end_src
+总是比下面的操作更有效率地被编译器转换：
+#+begin_src c++
+  c = a + b;
+#+end_src
+#+end_quote
+
+* TODO <2023-04-22 周六> 第 304（270）页
+
+#+begin_quote
+因此，如果临时对象在调用 printf() 之前就被解构了，经由 conversion 运算符交给它的地址就是不合法的。真正的结果视底部的 delete 运算符在释放内存时的进取性而定。某些编译器可能会把这块内存标示为 free，不以任何方式改变其内容。在这块内存被其它地方宣称主权之前，只要它还没有被 deleted 掉，它就可以被使用。虽然对于软件工程而言这不足以作为模范，但像这样在内存释放之后又再被使用，并非罕见。事实上 malloc() 的许多编译器会提供一个特殊的调用操作：
+#+begin_src c++
+  malloc(0);
+#+end_src
+它正是用来保证上述行为的。
+#+end_quote
+
+malloc(0) 是干啥的？
+
+* <2023-04-22 周六> 第 307（273）页
+
+动手尝试一下在最新编译器上的转换结果是怎么样的？
+
+* <2023-04-22 周六> 第 311（277）页
+
+第 6 章也结束了今天！我想对于“6.3 临时性对象（Temporary Objects）”的学习只要做到了解即可，比如说我了解了赋值运算符被编译器扩展以后是什么样子的；我了解了临时对象它是由编译器产生的等等。
+
+* <2023-04-26 周三> 第 314（280）页
+
+#+begin_quote
++ 如何“具现（instantiates）”出 class object 以及 inline nonmember，以及 member template functions，这些是“每一个编译单位都会拥有一份实体”的东西。
++ 如何“具现（instantiates）”出 nonmember 以及 member template functions，以及 static template class members，这些都是“每一个可执行文件中只需要一份实体”的东西。这也就是一般而言 template 所带来的问题。
+#+end_quote
+
+注意书中提到的：“每一个编译单位都会拥有一份实体”的东西和“每一个可执行文件中只需要一份实体”的东西。这里要看原文，翻译过来的不准确：
+
+#+begin_quote
++ Instantiation of the class object and inline nonmember and member template functions. These are instances required within each compilation unit.
++ Instantiation of the nonmember and member template functions and static template class members. These are instances required only once within an executable. This is where the problems with templates generally arise.
+#+end_quote
+
+* <2023-04-26 周三> 第 318（284）页
+
+#+begin_quote
+时，（略）。有趣的是，虽然 new 运算符是这个 class 的一个 implicitly static member，以至于它不能够直接处理其任何一个 nonstatic member，但它还是依赖真正的 template 参数类型，因为它的第一个参数 size_t 代表 class  的大小。
+#+end_quote
+
+new 运算符居然是这个 class 的一个 implicitly static member。
+
+* <2023-04-26 周三> 第 325（291）页
+
+#+begin_quote
+这个例子很清楚地与 template 参数有关，因为该参数将决定 _member 真正类型。所以这一次 foo() 必须在“scope of the template instantiation”中决议，本例中这个 scope 有两个 foo() 函数声明。由于 _member 的类型在本例中为 int，所以应该是 int 版 foo() 出线。如果 ScopeRules 是以 double 类型具现出来，那么就应该是 double 版的 foo() 出线。如果 ScopeRules 是以 unsigned int 或 long 类型具现出来，那么 foo() 调用操作就暧昧不明。最后，如果 ScopeRules 是以某一个 class 类型具现出来，而该 class 没有针对 int 或 double 实现出 conversion 运算符，那么 foo() 调用操作会被标示为错误。（略）
+#+end_quote
+
+这里可以弄懂 scope of the template declaration 和 scope of the template instantiation 的区别。
+
+* <2023-04-26 周三> 第 331（297）页
+
+整个“Member Function 的具现行为（Member Function Instantiation）”这段看不懂（从第 326（292）页开始），估计我也不打算把它看懂了。太难了！
+
+* <2023-04-27 周四> 第 341（307）页
+
+能看出来三家 Microsoft、Borland、Symantec 编译器在加入 EH 后对象变大了，执行变慢了。难怪有人建议 C++ 不要使用异常处理。
+
+* <2023-04-27 周四> 第 343（309）页
+
+不完整的代码看得我一头雾水：
+
+#+begin_quote
+在 const member functions 引入之前，（略）。因为 char* conversion 运算符现在被内部视为一个 gen 而不是一个 fct。
+#+end_quote
+
+不太懂 String 类的 operator char*() const; 的引入与 pfct pf = pfct( pt ); 有什么关系？但是从下面这段似乎能猜出这里的意思：
+
+#+begin_quote
+被称为 downcast（向下转型），（略）。在我们的例子中，一个指向 gen object 的指针被不正确的转型为一个指向 fct object 的指针 pf。所有后续对 pf 的使用都是不正确的（除非只是检查它是否为 0，或只是把它拿来和其它指针作比较）。
+#+end_quote
+
+我的理解是：pfct pf = pfct( pt ); 因为 gen 和 fct 都是从 type 派生出来的，可能 pt 是指向 gen 的，但是经过 pfct( pt )后被错误的转化为 fct 了。
+
+* <2023-04-27 周四> 第 354（320）页
+
+好了，全书看完了，在五一长假到来之前！
