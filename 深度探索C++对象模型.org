@@ -2,7 +2,7 @@
 #+AUTHOR: ysouyno
 #+OPTIONS: ^:nil
 
-* <2023-04-09 周日> 页数索引
+* 页数索引
 
 | Chapter | Page | Range |
 |---------+------+-------|
@@ -16,7 +16,7 @@
 |     All |  358 |       |
 #+TBLFM: @2$3..@>$3='(- @+1$2 @@#$2);N
 
-* <2023-04-12 周三> 页码导航
+* 页码导航
 
 | Keyword                                                  | Page      |
 |----------------------------------------------------------+-----------|
@@ -40,24 +40,6 @@ ADT 程序风格的理解（如今被称为 object-based (OB)）：它也是一�
 #+begin_quote
 如果设计者提供多个 constructors，但其中都没有 default constructor 呢？编译器会扩张现有的每一个 constructors，将“用以调用所有必要之 default constructors”的程序代码加进去。它不会合成一个新的 default constructor，这是因为其它“由 user 所提供的 constructors”存在的缘故。如果同时亦存在着“带有 default constructors”的 member class objects，那些 default constructor 也会被调用-在所有 base class constructor 都被调用之后。
 #+end_quote
-
-* <2023-04-18 周二> 第 084（050）页
-
-从[[239_205][“第 239（205）页”]]回过头来再看这里，似乎能看懂了这里的意思了。
-
-#+begin_quote
-一个良好的编译器可以为大部分 class objects 产生出 bitwise copies，因为它们有 bitwise copy semantics……
-
-也就是说，“如果一个 class 未定义出 copy constructor，编译器就自动为它产生出一个”这句话不对，而是应该像 ARM 所说：
-
-Default constructors 和 copy constructors 在必要的时候才由编译器产生出来。
-
-这个句子中的“必要”意指当 class 不展现 bitwise copy semantics 时。
-#+end_quote
-
-重点就是这句话我认为：“这个句子中的‘必要’意指当 class 不展现 bitwise copy semantics 时。”
-
-我的理解是：如果由编译器为你生成拷贝构造函数的话，该生成的拷贝构造函数是 memberwise 的，而上面提到：“一个良好的编译器可以为大部分 class objects 产生出 bitwise copies”，是指良好的编译器在不生成拷贝构造函数的前提下提供了很棒的 bitwise copies，棒得已经不用再合成拷贝构造函数了就达到拷贝构造的效果了。
 
 * <2023-04-06 周四> 第 086（052）页
 
@@ -407,6 +389,32 @@ C++ 并不支持“临时性的定义”，这是因为 class 构造行为的隐
 
 按此说法分别在 .c 和 .cpp 文件中测试发现：在 .c 中连续两次声明一个全局变量时，编译运行都不报错，但是在 .cpp 中编译会提示：“error: redefinition of 'int a'”之类的错误。
 
+* <2023-04-13 周四> 第 234（200）页
+
+#+begin_quote
+local1 的初始化操作会比 local2 的高效。这是因为当函数的 activation record 被放进程序堆栈时，上述 initialization list 中的常量就可以被放进 local1 内存中了。
+#+end_quote
+
+我花了两分钟了解了什么是“[[https://www.geeksforgeeks.org/access-links-and-control-links/][Activation Records]]”。
+
+* <2023-04-18 周二> 第 084（050）页
+
+从[[239_205][“第 239（205）页”]]回过头来再看这里，似乎能看懂了这里的意思了。
+
+#+begin_quote
+一个良好的编译器可以为大部分 class objects 产生出 bitwise copies，因为它们有 bitwise copy semantics……
+
+也就是说，“如果一个 class 未定义出 copy constructor，编译器就自动为它产生出一个”这句话不对，而是应该像 ARM 所说：
+
+Default constructors 和 copy constructors 在必要的时候才由编译器产生出来。
+
+这个句子中的“必要”意指当 class 不展现 bitwise copy semantics 时。
+#+end_quote
+
+重点就是这句话我认为：“这个句子中的‘必要’意指当 class 不展现 bitwise copy semantics 时。”
+
+我的理解是：如果由编译器为你生成拷贝构造函数的话，该生成的拷贝构造函数是 memberwise 的，而上面提到：“一个良好的编译器可以为大部分 class objects 产生出 bitwise copies”，是指良好的编译器在不生成拷贝构造函数的前提下提供了很棒的 bitwise copies，棒得已经不用再合成拷贝构造函数了就达到拷贝构造的效果了。
+
 * DONE <2023-04-18 周二> 第 232（198）页<<232_198>>
 
 #+begin_quote
@@ -420,14 +428,6 @@ C++ 并不支持“临时性的定义”，这是因为 class 构造行为的隐
 #+end_quote
 
 这里同上一行的疑问？难道 Plain Ol' Data 就是这样的情况？
-
-* <2023-04-13 周四> 第 234（200）页
-
-#+begin_quote
-local1 的初始化操作会比 local2 的高效。这是因为当函数的 activation record 被放进程序堆栈时，上述 initialization list 中的常量就可以被放进 local1 内存中了。
-#+end_quote
-
-我花了两分钟了解了什么是“[[https://www.geeksforgeeks.org/access-links-and-control-links/][Activation Records]]”。
 
 * <2023-04-18 周二> 第 235（201）页
 
