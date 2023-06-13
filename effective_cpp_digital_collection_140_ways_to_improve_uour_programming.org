@@ -38,7 +38,7 @@ A static object is one that exists from the time it's constructed until the end 
 
 如上表，non-local static objects 在不同编译单元里的初始化顺序是未定义的。
 
-所以我那个在 EImage 代码里新添加的 init_glog 类（用于调用 google::InitGoogleLogging("name");）的代码做为 non-local static objects 没有问题，因为所以 VLOG 等宏都是函数中调用的，那么即使在不同的编译单元里也能始终保证 init_glog 会先执行。
+所以我那个在 EImage 代码里新添加的 init_glog 类（用于调用 google::InitGoogleLogging("name");）的代码做为 non-local static objects 没有问题，因为所有 VLOG 等宏都是函数中调用的，那么即使在不同的编译单元里也能始终保证 init_glog 会先执行。
 
 ** <2023-03-31 周五> Item 6: Explicitly disallow the use of compiler-generated functions you do not want
 
