@@ -100,7 +100,18 @@ When you're writing a copying function, be sure to (1) copy all local data membe
 
 *** TODO <2023-03-31 周五> Item 27: static_cast 可以被用做强制隐式转换（这是什么意思？）
 
-*** TODO <2023-03-31 周五> 理解 copy and swap。
+*** DONE <2023-03-31 周五> 理解 copy and swap。
+
+<2023-06-26 周一> 感觉已经理解了所谓的 copy and swap，参考：“[[https://www.geeksforgeeks.org/copy-swap-idiom-c/][Copy-and-Swap Idiom in C++]]”，并重新阅读“Item 11: Handle assignment to self in operator=”有如下认识：
+
++ copy and swap 是针对 operator=() 而言。
++ operator=() 就不能不考虑 a = a 这种向自己本身赋值的情况。
++ 这样就有两个问题要考虑：
+  - if 判断语句是否与自身相等会拖慢执行速度，因为毕竟向自身赋值并不是常见的。
+  - 可能在删除对象过程中抛出异常而导致悬挂指针的情况。
++ 使用 copy and swap 时，operator=() 的参数为以值传递，这样会调用复制构造函数生成临时对象。
++ 这是有意为之，因为生成临时对象是编译器的行为，它会为此生成相关代码，比我们自己手写代码更好。
++ 且 swap 函数在所有临时对象都成功创建后才会交换，这样就避免了抛异常失败的问题。
 
 * Footnotes
 
