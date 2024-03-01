@@ -1,0 +1,75 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+options: author:t broken-links:nil c:nil creator:nil
+#+options: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+options: timestamp:t title:t toc:t todo:t |:t
+#+title: The Rust Programming Language
+#+date: <2024-02-29 周四>
+#+author: ysouyno
+#+email: ysouyno@163.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 29.2 (Org mode 9.6.15)
+#+cite_export:
+
+* 容易忘记的知识点
+
+** 第 3.2 节 <2024-02-29 周四>
+
++ Rust 中的 ~char~ 类型是四字节长度，与我们平时以 c++ 的认知是不一样的。
+#+begin_quote
+Rust’s char type is four bytes in size and represents a Unicode
+Scalar Value, which means it can represent a lot more than just
+ASCII. Accented letters; Chinese, Japanese, and Korean characters;
+emoji; and zero-width spaces are all valid char values in
+Rust. Unicode Scalar Values range from U+0000 to U+D7FF and U+E000 to
+U+10FFFF inclusive. However, a “character” isn’t really a concept
+in Unicode, so your human intuition for what a “character” is may
+not match up with what a char is in Rust.
+#+end_quote
+
++ 没有任何值的元组有一个特殊的名称 ~unit~ 。此值及其对应的类型都是
+  ~()~ ，并表示空值或空返回类型。表达式如果不返回任何其他值，则隐式返
+  回 ~unit~ 。
+
+** 第 3.3 节 <2024-02-29 周四>
+
++ 整个 ~fn~ 函数就是一个 ~statement~ 。
++ 调用函数是一个 ~expression~ ，调用一个宏是一个 ~expression~ ，花括号
+  括起来的代码块是一个 ~expression~ （最后一个语句不能加分号）。
+
+** 第 4.1 节 <2024-03-01 周五>
+
++ 有两个特性， ~Copy~ 和 ~clone~ ， ~Copy~ 用于栈上的类型，比如整形，
+  ~clone~ 用于堆上的类型，比如 ~String~ 。
++ 如果一个类型实现了 ~Copy~ 特性，使用它的变量不会移动，而是简单地复制，
+  使它们在赋值给另一个变量后仍然有效。
++ 如果类型或其任何部分实现了 ~Drop~ 特性，Rust 将不允许我们用 ~Copy~
+  注释类型。
+#+begin_quote
+To learn about how to add the Copy annotation to your type to
+implement the trait, see “Derivable Traits” in Appendix C.
+#+end_quote
+
++ 将变量传递给函数同样也会移动。
++ 返回值也可以转移所有权。
++ 这种情况也是不允许的：
+#+begin_src rust
+  fn main() {
+      let mut s = String::from("hello");
+
+      let r1 = &s; // no problem
+      let r2 = &s; // no problem
+      let r3 = &mut s; // BIG PROBLEM
+
+      println!("{}, {}, and {}", r1, r2, r3);
+  }
+#+end_src
+
++ 请注意，引用的作用域从它被引入的地方开始，一直持续到最后一次使用该引
+  用的时候。
+
+** 第 5.3 节 <2024-03-01 周五>
+
++ 结构体方法里的 ~&self~ 参考，实现就是 ~self: &Self~ 的简写。
