@@ -13,6 +13,25 @@
 #+creator: Emacs 29.2 (Org mode 9.6.15)
 #+cite_export:
 
+* 我的理解
+
+** 第 7.1 节 <2024-03-02 周六>
+
+怎么没有人问问这句话怎么理解吗？为什么我用 Rust 创建了一个 Package，这
+个 Package 只能包含一个 library crate 呢？我记得在 Cargo.toml 不是可以
+包含很多个 library crate 依赖嘛？没有听说最多只能包含一个呀？
+
+#+begin_quote
+A package can contain as many binary crates as you like, but at most
+only one library crate. A package must contain at least one crate,
+whether that’s a library or binary crate.
+#+end_quote
+
+难道只有我一个人理解错了？我想这应该是中英文的翻译和理解问题吧！需要注
+意这里的“包含”不是指 c++ 里的 include，而只是 contain。这句话要表达
+的意思应该是：新建了一个 Rust 的 Package，这个 Package 里可以新增很多
+个 crate，但是最多只能有一个 crate 是 library。
+
 * 容易忘记的知识点
 
 ** 第 3.2 节 <2024-02-29 周四>
@@ -91,21 +110,67 @@ implement the trait, see “Derivable Traits” in Appendix C.
   }
 #+end_src
 
-* 我的理解
+** 第 8.1 节 <2024-03-03 周日>
 
-** 第 7.1 节 <2024-03-02 周六>
+请注意下面这段代码是存在错误的：
 
-怎么没有人问问这句话怎么理解吗？为什么我用 Rust 创建了一个 Package，这
-个 Package 只能包含一个 library crate 呢？我记得在 Cargo.toml 不是可以
-包含很多个 library crate 依赖嘛？没有听说最多只能包含一个呀？
+#+begin_src rust
+  fn main() {
+      let mut v = vec![1, 2, 3, 4, 5];
+      let first = &v[0];
+      v.push(6);
+
+      println!("The first element is: {first}");
+  }
+#+end_src
+
+因为 ~vector~ 可能会随着长度的增加而申请更大的内存，所以 ~first~ 可能
+会指向已经释放的内存。
+
+对于 ~String~ 来说，按照索引来取它的单个字符是不合法的，因为它内部是
+~utf-8~ 编码，但是如果要迭代输出整个 ~String~ 的话，有两种方式，
+~chars~ 和 ~bytes~ ，见测试代码：
+
+#+begin_src rust
+  fn main() {
+      let s = "你好";
+
+      print!("{} as chars: ", s);
+      for i in s.chars() {
+	  print!("{} ", i);
+      }
+      print!("\n{} as bytes: ", s);
+      for i in s.bytes() {
+	  print!("{} ", i);
+      }
+      println!();
+  }
+#+end_src
+
+#+begin_src text
+  你好 as chars: 你 好
+  你好 as bytes: 228 189 160 229 165 189
+#+end_src
+
+** 第 9.2 节 <2024-03-03 周日>
+
+此节真的好长！
+
+我之前经常使用的 ~unwrap~ ，对它还是不太了解，在这里可以有两点：
+
+1. ~unwrap~ 如果失败，程序会直接 panic。
+2. ~expect~ 和 ~unwrap~ 一样，只不过 ~expect~ 可以自定义文本。
+
+*** TODO 尝试创建 ~OurError~ <2024-03-03 周日>
+
+这节里提到的 ~From~ 特性，并提到可以使用自定义的 ~OurError~ ，并为它实
+现 ~impl From<io::Error> for OurError~ 特性，我觉得我有时间可以尝试一
+下。
+*** TODO ~Result~ 好像可以和 ~Option~ 相互转化 <2024-03-03 周日>
 
 #+begin_quote
-A package can contain as many binary crates as you like, but at most
-only one library crate. A package must contain at least one crate,
-whether that’s a library or binary crate.
+The ? operator won’t automatically convert a Result to an Option or
+vice versa; in those cases, you can use methods like the ok method on
+Result or the ok_or method on Option to do the conversion explicitly.
 #+end_quote
 
-难道只有我一个人理解错了？我想这应该是中英文的翻译和理解问题吧！需要注
-意这里的“包含”不是指 c++ 里的 include，而只是 contain。这句话要表达
-的意思应该是：新建了一个 Rust 的 Package，这个 Package 里可以新增很多
-个 crate，但是最多只能有一个 crate 是 library。
