@@ -161,11 +161,52 @@ implement the trait, see “Derivable Traits” in Appendix C.
 1. ~unwrap~ 如果失败，程序会直接 panic。
 2. ~expect~ 和 ~unwrap~ 一样，只不过 ~expect~ 可以自定义文本。
 
-*** TODO 尝试创建 ~OurError~ <2024-03-03 周日>
+*** DONE 尝试创建 ~OurError~ <2024-03-03 周日> <2024-03-04 周一>
 
 这节里提到的 ~From~ 特性，并提到可以使用自定义的 ~OurError~ ，并为它实
 现 ~impl From<io::Error> for OurError~ 特性，我觉得我有时间可以尝试一
 下。
+
+下面是我的尝试代码及输出：
+
+#+begin_src rust
+  #![allow(unused)]
+  use std::fs::File;
+  use std::io::{self, Read};
+
+  #[derive(Debug)]
+  struct OurError {
+      desc: String,
+  }
+
+  impl From<io::Error> for OurError {
+      fn from(value: io::Error) -> Self {
+	  OurError {
+	      desc: format!("From io::Error {} to OurError.", value),
+	  }
+      }
+  }
+
+  fn read_username_from_file() -> Result<String, OurError> {
+      let mut username_file = File::open("hello.txt")?;
+      let mut username = String::new();
+      username_file.read_to_string(&mut username)?;
+      Ok(username)
+  }
+
+  fn main() {
+      read_username_from_file().unwrap();
+  }
+#+end_src
+
+程序输出：
+
+#+begin_src text
+  thread 'main' panicked at src\main.rs:26:31:
+  called `Result::unwrap()` on an `Err` value: OurError { desc: "From io::Error 系统找不到指定的文件。 (os error 2) to OurError." }
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+#+end_src
+
 *** TODO ~Result~ 好像可以和 ~Option~ 相互转化 <2024-03-03 周日>
 
 #+begin_quote
@@ -174,3 +215,6 @@ vice versa; in those cases, you can use methods like the ok method on
 Result or the ok_or method on Option to do the conversion explicitly.
 #+end_quote
 
+** 第 10.3 节 <2024-03-04 周一>
+
+生命周期就像模板参数一样！
