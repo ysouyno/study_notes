@@ -137,11 +137,11 @@ implement the trait, see ¡°Derivable Traits¡± in Appendix C.
 
       print!("{} as chars: ", s);
       for i in s.chars() {
-	  print!("{} ", i);
+          print!("{} ", i);
       }
       print!("\n{} as bytes: ", s);
       for i in s.bytes() {
-	  print!("{} ", i);
+          print!("{} ", i);
       }
       println!();
   }
@@ -181,9 +181,9 @@ implement the trait, see ¡°Derivable Traits¡± in Appendix C.
 
   impl From<io::Error> for OurError {
       fn from(value: io::Error) -> Self {
-	  OurError {
-	      desc: format!("From io::Error {} to OurError.", value),
-	  }
+          OurError {
+              desc: format!("From io::Error {} to OurError.", value),
+          }
       }
   }
 
