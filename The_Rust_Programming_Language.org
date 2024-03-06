@@ -61,8 +61,8 @@ not match up with what a char is in Rust.
 
 ** 第 4.1 节 <2024-03-01 周五>
 
-有两个特性要注意： ~Copy~ 和 ~clone~ ， ~Copy~ 用于栈上的类型，比如整
-形， ~clone~ 用于堆上的类型，比如 ~String~ 。
+有两个特性要注意： ~Copy~ 和 ~Clone~ ， ~Copy~ 用于栈上的类型，比如整
+形， ~Clone~ 用于堆上的类型，比如 ~String~ 。
 
 如果一个类型实现了 ~Copy~ 特性，使用它的变量不会移动，而是简单地复制，
 使它们在赋值给另一个变量后仍然有效。如果类型或其任何部分实现了 ~Drop~
@@ -218,3 +218,63 @@ Result or the ok_or method on Option to do the conversion explicitly.
 ** 第 10.3 节 <2024-03-04 周一>
 
 生命周期就像模板参数一样！
+
+** 第 13.1 节 <2024-03-06 周三>
+
+最近几天怎么一看书就困，这一个小节已经看了一个半小时了，还没看完。
+
+** 第 13.2 节 <2024-03-06 周三>
+
+这段代码中 ~v1_iter~ 是需要设为 ~mut~ 的，但是在 ~for~ 循环中不用，为
+什么？因为：
+
+#+begin_quote
+We didn't need to make ~v1_iter~ mutable when we used a ~for~ loop
+because the loop took ownership of ~v1_iter~ and made it mutable
+behind the scenes.
+#+end_quote
+
+#+begin_src rust
+  #[cfg(test)]
+  mod tests {
+      #[test]
+      fn iterator_demonstration() {
+          let v1 = vec![1, 2, 3];
+
+          let mut v1_iter = v1.iter();
+
+          assert_eq!(v1_iter.next(), Some(&1));
+          assert_eq!(v1_iter.next(), Some(&2));
+          assert_eq!(v1_iter.next(), Some(&3));
+          assert_eq!(v1_iter.next(), None);
+      }
+  }
+#+end_src
+
+#+begin_quote
+If we want to create an iterator that takes
+ownership of ~v1~ and returns owned values, we can call ~into_iter~ instead of
+~iter~. Similarly, if we want to iterate over mutable references, we can call
+~iter_mut~ instead of ~iter~.
+#+end_quote
+
+目前我总结了一点小小的命名规律：
+
+1. ~to_string~ 会返回新生成一个 ~String~ 实例。
+2. ~as_str~ 获得切片，即 ~&str~ 类型。
+3. ~chars~ 用 C++ 思维理解为索引方式，在这里 ~char~ 是四字节。
+4. ~bytes~ 用 C++ 思维理解即一个字节。
+5. ~iter~ 即 immutable references。
+6. ~into_iter~ 即迭代器的所有权转移。
+7. ~into_mut~ 即 mutable references。
+
+这节同时有两个概念要注意一下：即 ~consuming adaptor~ 和 ~iterator
+adaptor~ 。
+
+1. 前者是调用了 ~next()~ 方法的方法叫 ~consuming adaptor~ 。
+2. 后者是指没有消耗迭代器的方法，它通过改变原有迭代器的某些方法以生成
+   新的不同的迭代器。
+
+** 第 14.2 节 <2024-03-06 周三>
+
+yank 理解为“召回”比较贴切。
