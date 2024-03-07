@@ -278,3 +278,48 @@ adaptor~ 。
 ** 第 14.2 节 <2024-03-06 周三>
 
 yank 理解为“召回”比较贴切。
+
+** 第 15.2 节 <2024-03-07 周四>
+
+什么是 ~associated type~ ？下面例子中的 ~Target~ 就是：
+
+#+begin_src rust
+  use std::ops::Deref;
+
+  impl<T> Deref for MyBox<T> {
+      type Target = T;
+
+      fn deref(&self) -> &Self::Target {
+          &self.0
+      }
+  }
+#+end_src
+
+*** TODO 主动 ~drop~ <2024-03-07 周四>
+
+这里有个问题书中没讲：既然可以主动调用 ~std::mem::drop~ 释放，那是怎么
+保证被主动释放的变量不会再被 ~Drop~ 的 ~drop~ 再自动调用一次呢？
+
+** 第 15.4 节 <2024-03-07 周四>
+
+我觉得这句话说得比较好：
+
+我们在什么情况下使用 ~Rc<T>~ 呢？如果一个程序要用的一块内存在程序中被
+多个部分使用，但是又不知道哪个部分是最后使用的，这个时候就可以用
+~Rc<T>~ 来指定这块内存被多个所有者拥有；如果你知道哪个部分会最后使用，
+你只需要将这个部分设置为所有者。
+
+** 第 15.5 节 <2024-03-07 周四>
+
+#+begin_quote
++ ~Rc<T>~ enables multiple owners of the same data; ~Box<T>~ and
+  ~RefCell<T>~ have single owners.
+
++ ~Box<T>~ allows immutable or mutable borrows checked at compile
+  time; ~Rc<T>~ allows only immutable borrows checked at compile time;
+  ~RefCell<T>~ allows immutable or mutable borrows checked at runtime.
+
++ Because ~RefCell<T>~ allows mutable borrows checked at runtime, you
+  can mutate the value inside the ~RefCell<T>~ even when the
+  ~RefCell<T>~ is immutable.
+#+end_quote
