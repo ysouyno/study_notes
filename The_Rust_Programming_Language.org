@@ -323,3 +323,37 @@ yank 理解为“召回”比较贴切。
   can mutate the value inside the ~RefCell<T>~ even when the
   ~RefCell<T>~ is immutable.
 #+end_quote
+
+** 第17.3 节 <2024-03-13 周三>
+
+#+begin_quote
+We need to set ~state~ to ~None~ temporarily rather than setting it
+directly with code like ~self.state = self.state.request_review();~ to
+get ownership of the ~state~ value. This ensures ~Post~ can’t use the
+old ~state~ value after we’ve transformed it into a new state.
+#+end_quote
+
+这段话没理解，它指的应该是这句代码：
+
+#+begin_src rust
+  impl Post {
+      // --snip--
+      pub fn request_review(&mut self) {
+          if let Some(s) = self.state.take() {
+              self.state = Some(s.request_review())
+          }
+      }
+  }
+#+end_src
+
+*** TODO Why Not An Enum? <2024-03-13 周三>
+
+#+begin_quote
+You may have been wondering why we didn’t use an ~enum~ with the
+different possible post states as variants. That’s certainly a
+possible solution, try it and compare the end results to see which you
+prefer! One disadvantage of using an enum is every place that checks
+the value of the enum will need a ~match~ expression or similar to
+handle every possible variant. This could get more repetitive than
+this trait object solution.
+#+end_quote
