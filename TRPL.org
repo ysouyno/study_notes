@@ -357,3 +357,12 @@ the value of the enum will need a ~match~ expression or similar to
 handle every possible variant. This could get more repetitive than
 this trait object solution.
 #+end_quote
+
+** 第 19.2 节 <2024-03-14 周四>
+
+看到这句话，这节我就不想看了：
+
+#+begin_quote
+We’ve described most of the advanced features in this chapter as
+being rarely needed.
+#+end_quote
