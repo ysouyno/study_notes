@@ -1,0 +1,40 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+options: author:t broken-links:nil c:nil creator:nil
+#+options: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t
+#+options: timestamp:t title:t toc:t todo:t |:t
+#+title: Rust 编程之道
+#+date: <2024-03-17 周日>
+#+author: ysouyno
+#+email: ysouyno@163.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 29.2 (Org mode 9.6.15)
+#+cite_export:
+
+* 读书摘录
+
+** 第 3.6.1 孤儿规则的局限性 <2024-03-16 周六>
+
+#+begin_src rust
+  #[fundamental]
+  pub struct Box<T: ?Sized>(Unique<T>);
+#+end_src
+
+代码展示了 ~Box<T>~ 的源码示意，可以看到其定义上方标识了
+~#[fundamenthoal]~ 属性，该属性的作用就是告诉编译器， ~Box<T>~ 享有
+“特权”，不必遵循孤儿规则。
+
+除了 ~Box<T>~ ，还有 ~Fn~ 、 ~FnMut~ 、 ~FnOnce~ 、 ~Sized~ 等都加上了
+~#[fundamental]~ 属性，代表这些 ~trait~ 也同样不受孤儿规则的限制。所以
+在阅读 ~Rust~ 源码的时候，如果看到该属性标识，就应该知道它和孤儿规则有
+关。
+
+** 第 5.1 通用概念 <2024-03-17 周日>
+
+智能指针 ~Box<T>~ 封装了原生指针，是典型的引用类型。 ~Box<T>~ 无法实现
+~Copy~ ，意味着它被 ~Rust~ 标记了引用语义，禁止按位复制。
+
+值得注意的是，虽然引用语义类型不能实现 ~Copy~ ，便可以实现 ~Clone~ 的
+~clone~ 方法，以实现深复制，在需要的时候可以显式调用。
