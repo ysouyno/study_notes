@@ -324,7 +324,69 @@ yank 理解为“召回”比较贴切。
   ~RefCell<T>~ is immutable.
 #+end_quote
 
-** 第17.3 节 <2024-03-13 周三>
+** 第 15.6 节 <2024-04-22 周一>
+
+事隔一个月，又重新拾起来再学习，这个真的有点痛苦，一来学了用不上，二来
+确实也想学。
+
+看到这种写法 ~RefCell<Rc<List>>~ 的代码，要注意可能会引起循环引用导致
+内存泄漏。
+
+在这一小段中“Preventing Reference Cycles: Turning an ~Rc<T>~ into a
+~Weak<T>~ ”，讲了一些我认为重要的内容：
+
+1. 你可以创建一个 ~weak reference~ ，通过调用 ~Rc::downgrade~ 并传入一
+   个 ~Rc<T>~ 的引用。
+2. ~strong references~ 是你分享一个 ~Rc<T>~ 实例的所有权， ~weak
+   references~ 跟所有权没有任何关系，它的计数也不会影响 ~Rc<T>~ 如何清
+   理。
+3. 调用 ~Rc::downgrade~ 返回 ~Weak<T>~ ，它会让 ~weak_count~ 计数增加
+   ~1~ ， ~weak_count~ 不需要为 ~0~ 时才清理 ~Rc<T>~ 对象。
+4. 正因为 ~weak_count~ 不需要为 ~0~ 时才清理，所以 ~Weak<T>~ 智能指针指
+   向的值很可能已经不存在，所以你要使用 ~Weak<T>~ 时必须要确保它的存在，
+   可以通过调用 ~upgrade~ 方法，它返回 ~Option<Rc<T>>~ 类型，这样你就
+   可以处理 ~Some~ 和 ~None~ 的情况了。
+
+确实！如果有一个节点有两个指针，一个指向它的孩子节点，另一个指向它的父
+亲节点，就很可能创建一个循环引用。所以正如这节中最后的例子所展示的那样。
+
+孩子节点可以拥有他孩子节点的所有权，但是孩子节点不能拥有他父亲节点的所
+有权，所以用 ~Rc~ 指向孩子节点，用 ~Weak~ 指向父亲节点。（ ~Rc~ 就是用
+在这种多个所有者的情况下）
+
+#+begin_src rust
+  use std::cell::RefCell;
+  use std::rc::{Rc, Weak};
+
+  #[derive(Debug)]
+  struct Node {
+      value: i32,
+      parent: RefCell<Weak<Node>>,
+      children: RefCell<Vec<Rc<Node>>>,
+  }
+
+  fn main() {
+      let leaf = Rc::new(Node {
+          value: 3,
+          parent: RefCell::new(Weak::new()),
+          children: RefCell::new(vec![]),
+      });
+
+      println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+      let branch = Rc::new(Node {
+          value: 5,
+          parent: RefCell::new(Weak::new()),
+          children: RefCell::new(vec![Rc::clone(&leaf)]),
+      });
+
+      ,*leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+
+      println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+  }
+#+end_src
+
+** 第 17.3 节 <2024-03-13 周三>
 
 #+begin_quote
 We need to set ~state~ to ~None~ temporarily rather than setting it
