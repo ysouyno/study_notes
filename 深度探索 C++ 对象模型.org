@@ -347,7 +347,7 @@ Inline 函数对于封装提供了一种必要的支持，可以有效存取封�
 
 * <2023-04-13 周四> 第 227（193）页
 
-我说怎么有点印象呢，原来在我的另一篇读书笔记《Effective  C++》的[[file:effective_cpp.org][“<2023-03-31 周五> Item 7: Declare destructors virtual in polymorphic base classes”]]提到了“纯虚析构函数必须要有定义”，这里说明了具体原因：
+我说怎么有点印象呢，原来在我的另一篇读书笔记《Effective  C++》的[[file:effective_cpp_digital_collection_140_ways_to_improve_uour_programming.org][“<2023-03-31 周五> Item 7: Declare destructors virtual in polymorphic base classes”]]提到了“纯虚析构函数必须要有定义”，这里说明了具体原因：
 
 #+begin_quote
 要不要这样做，全由 class 设计者决定，唯一的例外就是 pure virtual destructor：class 设计者一定得定义它。为什么？因为每一个 derived class destructor 会被编译加以扩展，以静态调用的方式调用其“每一个 virtual base class”以及“上一层 base class”的 destructor。因此，只要缺乏任何一个 base class destructor 的定义，就会导致链接失败。
