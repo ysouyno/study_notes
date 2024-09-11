@@ -805,6 +805,20 @@ new 运算符居然是这个 class 的一个 implicitly static member。
 
 好了，全书看完了，在五一长假到来之前！
 
+* <2024-09-11 周三> 第 024 页
+
+这里的描述是概念性的，是关于 ~ADT~ 和 ~OO~ 行为的。
+
+将一个派生类对象直接赋值给基类对象，会发生 sliced 的现象，但这个行为是 ~ADT paradigm~ 的良好行为：
+
+#+begin_src c++
+  Base base;
+  Derived derived;
+  base = derived; // sliced
+#+end_src
+
+通过 pointers 和 references 的操作是 ~OO paradigm~ 行为。
+
 * <2024-09-10 周二> 第 176 页
 
 有如下的测试代码：
