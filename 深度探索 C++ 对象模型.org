@@ -193,9 +193,9 @@ C++ Standard 也允许编译器将多个 access sections 之中的 data members 
   float Point3d::*p2 = &Point3d::x;
 
   if (p1 == p2) {
-      std::cout << "p1 & p2 contain the same value --" ;
-      std::cout << "they must address the same member!\n";
-  }
+    std::cout << "p1 & p2 contain the same value --" ;
+    std::cout << "they must address the same member!\n";
+   }
 #+end_src
 为了区分 p1 和 p2，每一个真正的 member offset 值都被加上 1，因此，不论编译器或使用都都必须记住，在真正使用该值以指出一个 member 之前，请先减掉 1。
 #+end_quote
@@ -367,12 +367,12 @@ Inline 函数对于封装提供了一种必要的支持，可以有效存取封�
 
 #+begin_src c++
   class Abstract_base {
-      public:
-          virtual ~Abstract_base() = 0;
-          virtual void interface() const = 0;
-          virtual const char* mumble() const { return _mumble; }
-      protected:
-          char *_mumble;
+  public:
+    virtual ~Abstract_base() = 0;
+    virtual void interface() const = 0;
+    virtual const char* mumble() const { return _mumble; }
+  protected:
+    char *_mumble;
   };
 #+end_src
 
@@ -380,13 +380,13 @@ Inline 函数对于封装提供了一种必要的支持，可以有效存取封�
 
 #+begin_src c++
   class Abstract_base {
-      public:
-          virtual ~Abstract_base(); // 不再是 pure
-          virtual void interface() = 0; // 不再是 const
-          const char* mumble() const { return _mumble; } // 不再是 virtual
-      protected:
-          Abstract_base( char *pc = 0 ); // 新增一个带有唯一参数的 constructor
-          char *_mumble;
+  public:
+    virtual ~Abstract_base(); // 不再是 pure
+    virtual void interface() = 0; // 不再是 const
+    const char* mumble() const { return _mumble; } // 不再是 virtual
+  protected:
+    Abstract_base( char *pc = 0 ); // 新增一个带有唯一参数的 constructor
+    char *_mumble;
   };
 #+end_src
 
@@ -448,7 +448,7 @@ Default constructors 和 copy constructors 在必要的时候才由编译器产�
   // C++ 伪码
   Point *heap = __new(sizeof(Point));
   if (heap != 0)
-      heap->Point::Point();
+    heap->Point::Point();
 #+end_src
 #+end_quote
 
@@ -468,12 +468,12 @@ Default constructors 和 copy constructors 在必要的时候才由编译器产�
   Point global;
 
   Point foobar() {
-      Point local;
-      Point *heap = new Point;
-      ,*heap = local;
-      // ... stuff ...
-      delete heap;
-      return local;
+    Point local;
+    Point *heap = new Point;
+    ,*heap = local;
+    // ... stuff ...
+    delete heap;
+    return local;
   }
 #+end_src
 
@@ -523,10 +523,10 @@ the Vertex3d constructor correctly invokes the Point constructor. The Point3d an
 #+begin_src c++
   void __fastcall Vertex::Vertex(Vertex *this, float a2, float a3, float a4, _QWORD *a5)
   {
-      ,*(_QWORD *)this = *a5;
-      ,*(_QWORD *)((char *)this + *(_QWORD *)(*(_QWORD *)this - 24LL)) = a5[1];
-      ,*((float *)this + 2) = a4;
-      Vertex::size(this);
+    ,*(_QWORD *)this = *a5;
+    ,*(_QWORD *)((char *)this + *(_QWORD *)(*(_QWORD *)this - 24LL)) = a5[1];
+    ,*((float *)this + 2) = a4;
+    Vertex::size(this);
   }
 #+end_src
 
@@ -535,10 +535,10 @@ the Vertex3d constructor correctly invokes the Point constructor. The Point3d an
 #+begin_src c++
   void __fastcall Point::Point(Point *this, float a2, float a3)
   {
-      ,*(_QWORD *)this = off_3CE8;
-      ,*((float *)this + 2) = a2;
-      ,*((float *)this + 3) = a3;
-      Point::size(this);
+    ,*(_QWORD *)this = off_3CE8;
+    ,*((float *)this + 2) = a2;
+    ,*((float *)this + 3) = a3;
+    Point::size(this);
   }
 #+end_src
 
@@ -642,30 +642,30 @@ v1 和 v2 都被配置于程序的 data segment，（略）。在 C 语言中一
   struct Matrix*
   identity__Fv ()
   {
-      // the __1 reflects the lexical level
-      // this permitted support for code such as
-      // int val;
-      // int f() { int val;
-      // return val + ::val; }
-      // where the last line becomes
-      // ....return __1val + val;
-      static struct Matrix __1mat_identity ;
-      // if the guard is set, do nothing, else
-      // (a) invoke the constructor: __ct__6MatrixFv
-      // (b) set the guard to address the object
-      __0__F3
-          ? 0
-          :(__ct__1MatrixFv ( & __1mat_identity ),
-            (__0__F3 = (&__1mat_identity)));
-      // ...
+    // the __1 reflects the lexical level
+    // this permitted support for code such as
+    // int val;
+    // int f() { int val;
+    // return val + ::val; }
+    // where the last line becomes
+    // ....return __1val + val;
+    static struct Matrix __1mat_identity ;
+    // if the guard is set, do nothing, else
+    // (a) invoke the constructor: __ct__6MatrixFv
+    // (b) set the guard to address the object
+    __0__F3
+      ? 0
+      :(__ct__1MatrixFv ( & __1mat_identity ),
+        (__0__F3 = (&__1mat_identity)));
+    // ...
   }
 
   char __std__stat_0_c_j ()
   {
-      __0__F3
-          ? __dt__6MatrixFv( __0__F3 , 2)
-          : 0 ;
-      // ...
+    __0__F3
+      ? __dt__6MatrixFv( __0__F3 , 2)
+      : 0 ;
+    // ...
   }
 #+end_src
 
@@ -689,7 +689,7 @@ Placement new operator 所扩充的另一半边是将 Point2w constructor 自动
   // Pseudo C++ code
   Point2w ptw = ( Point2w* ) arena;
   if ( ptw != 0 )
-      ptw->Point2w::Point2w();
+    ptw->Point2w::Point2w();
 #+end_src
 这正是使 placement operator new 威力如此强大的原因。这一份码决定 objects 被放置在哪里；编译系统保证 object 的 constructor 会施行于其上。
 #+end_quote
@@ -804,3 +804,187 @@ new 运算符居然是这个 class 的一个 implicitly static member。
 * <2023-04-27 周四> 第 354（320）页
 
 好了，全书看完了，在五一长假到来之前！
+
+* <2024-09-10 周二> 第 176 页
+
+有如下的测试代码：
+
+#+begin_src c++
+  #include <stdio.h>
+
+  class Point {
+  public:
+    Point(float = 0.0) {}
+    virtual ~Point() {}
+
+    virtual void mumble() {}
+    virtual float z() {
+      printf("Point::z() called\n");
+      return 0.0;
+    }
+
+  protected:
+    float _x;
+  };
+
+  class Point2d : public Point {
+  public:
+    Point2d(float = 0.0, float = 0.0) {}
+    virtual ~Point2d() {}
+
+    virtual void mumble() {}
+    virtual float z() {
+      printf("Point2d::z() called\n");
+      return 0.0;
+    }
+
+  protected:
+    float _x, _y;
+  };
+
+  class Point3d : public virtual Point2d {
+  public:
+    Point3d(float = 0.0, float = 0.0, float = 0.0) {}
+    ~Point3d() {}
+
+    float z() {
+      printf("Point3d::z() called\n");
+      return _z;
+    }
+
+  protected:
+    float _z;
+  };
+
+  int main() {
+    float (Point:: * pmf)() = &Point::z;
+    printf("pmf: %p\n", pmf);
+    Point* ptr = new Point3d;
+    ptr->z();
+    (ptr->*pmf)();
+  }
+#+end_src
+
+程序输出（vs2022）：
+
+#+begin_src text
+  pmf: 00A61361
+  Point3d::z() called
+  Point3d::z() called
+#+end_src
+
+~pmf~ 的值，每次重新编译后会更改一次。
+
+* <2024-09-11 周三> 第 217 页
+
+有如下的测试代码：
+
+#+begin_src c++
+  #include <stdio.h>
+
+  class Point {
+  public:
+    Point(float x = 0.0, float y = 0.0) {}
+    Point(const Point& rhs) {}
+    Point& operator=(const Point& rhs) {}
+
+    virtual ~Point() {}
+
+    virtual float z() {
+      printf("Point::z()\n");
+      return 0.0;
+    }
+
+    virtual int size() {
+      int val = sizeof(*this);
+      printf("Point::size(): %d\n", val);
+      return val;
+    }
+
+  protected:
+    float _x, _y;
+  };
+
+  class Point3d : virtual public Point {
+  public:
+    Point3d(float x = 0.0, float y = 0.0, float z = 0.0)
+      : Point(x, y), _z(z) {
+      printf("Within Point3d::Point3d() size: %d\n", size());
+    }
+
+    Point3d(const Point3d& rhs)
+      : Point(rhs), _z(rhs._z) {}
+    Point3d& operator=(const Point3d& rhs) {}
+    ~Point3d() {}
+
+    virtual float z() {
+      printf("Point3d::z()\n");
+      return _z;
+    }
+
+    virtual int size() {
+      int val = sizeof(*this);
+      printf("Point3d::size(): %d\n", val);
+      return val;
+    }
+
+  protected:
+    float _z;
+  };
+
+  class Vertex : virtual public Point {
+  public:
+    Vertex() {
+      printf("Within Vertex::Vertex() size: %d\n", size());
+    }
+
+    virtual int size() {
+      int val = sizeof(*this);
+      printf("Vertex::size(): %d\n", val);
+      return val;
+    }
+  };
+
+  class Vertex3d : public Point3d, public Vertex {
+  public:
+    Vertex3d() {
+      printf("Within Vertex3d::Vertex3d() size: %d\n", size());
+    }
+
+    virtual int size() {
+      int val = sizeof(*this);
+      printf("Vertex3d::size(): %d\n", val);
+      return val;
+    }
+  };
+
+  class PVertex : public Vertex3d {
+  public:
+    PVertex() {
+      printf("Within PVertex::PVertex() size: %d\n", size());
+    }
+
+    virtual int size() {
+      int val = sizeof(*this);
+      printf("PVertex::size(): %d\n", val);
+      return val;
+    }
+  };
+
+  int main() {
+    PVertex pv;
+  }
+#+end_src
+
+程序输出（vs2022）：
+
+#+begin_src text
+  Point3d::size(): 24
+  Within Point3d::Point3d() size: 24
+  Vertex::size(): 20
+  Within Vertex::Vertex() size: 20
+  Vertex3d::size(): 28
+  Within Vertex3d::Vertex3d() size: 28
+  PVertex::size(): 28
+  Within PVertex::PVertex() size: 28
+#+end_src
