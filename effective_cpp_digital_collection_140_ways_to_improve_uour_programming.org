@@ -113,6 +113,449 @@ When you're writing a copying function, be sure to (1) copy all local data membe
 + 这是有意为之，因为生成临时对象是编译器的行为，它会为此生成相关代码，比我们自己手写代码更好。
 + 且 swap 函数在所有临时对象都成功创建后才会交换，这样就避免了抛异常失败的问题。
 
+* More Effective C++: 35 New Ways to Improve Your Programs and Designs
+
+** <2024-10-31 周四> Item 29: Reference counting
+
+*** Copy-on-Write
+
+#+begin_src c++
+  #include <string.h>
+  #include <stdio.h>
+
+  class String {
+  public:
+    String(const char* str = "");
+    String(const String& rhs);
+    ~String();
+
+    String& operator=(const String& rhs);
+    const char& operator[](int index) const;
+    char& operator[](int index);
+
+  private:
+    struct StringValue {
+      int refcount;
+      char* data;
+      StringValue(const char* str);
+      ~StringValue();
+    };
+
+    StringValue* value;
+  };
+
+  String::StringValue::StringValue(const char* str) : refcount(1) {
+    data = new char[strlen(str) + 1];
+    strcpy(data, str);
+  }
+
+  String::StringValue::~StringValue() {
+    delete[]data;
+  }
+
+  String::String(const char* str) : value(new StringValue(str)) {}
+
+  String::String(const String& rhs) : value(rhs.value) {
+    ++value->refcount;
+  }
+
+  String::~String() {
+    if (--value->refcount == 0)
+      delete value;
+  }
+
+  String& String::operator=(const String& rhs) {
+    if (value == rhs.value)
+      return *this;
+
+    // 比如 s1 = s2，原来 s1 计数要减去一
+    if (--value->refcount == 0)
+      delete value;
+
+    value = rhs.value;
+    ++value->refcount;
+    return *this;
+  }
+
+  const char& String::operator[](int index) const {
+    return value->data[index];
+  }
+
+  char& String::operator[](int index) {
+    // 与其它对象共享一个值直到写操作时才拥有自己的拷贝（写时复制）
+    if (value->refcount > 1) {
+      --value->refcount;
+      value = new StringValue(value->data);
+    }
+
+    return value->data[index];
+  }
+
+  int main() {
+    String s1("More Effective C++");
+    String s2 = s1;
+  }
+#+end_src
+
+大部分情况下，写时拷贝可以同时保证效率和正确性。只有一个挥之不去的问题。看一下这样的代码：
+
+#+begin_src c++
+  String s1 = "Hello";
+  char *p = &s1[1];
+  String s2 = s1;
+  ,*p = 'x'; // modifies both s1 and s2!
+#+end_src
+
+~String~ 的拷贝构造函数没有办法检测这样的问题，因为它不知道指向 ~s1~ 拥有的 ~StringValue~ 对象的指针的存在。并且，这个问题不局限于指针：它同样存在于有人保存了一个 ~String~ 的 ~non-const operator[]~ 的返回值的引用的情况下。
+
+书中提供了一个解决方法，增加了一个 ~shareable~ 成员，初始值为 ~true~ ，置 ~false~ 后永远是 ~false~ ：
+
+#+begin_src c++
+  char& String::operator[](int index) {
+    if (value->refCount > 1) {
+      --value->refCount;
+      value = new StringValue(value->data);
+    }
+    value->shareable = false; // add this
+    return value->data[index];
+  }
+#+end_src
+
+*** 写时复制问题的解决方法
+
+首先请回忆一下书中介绍的写时复制会有什么问题？
+
+解决的代码如下：
+
+#+begin_src c++
+  #include <string.h>
+  #include <stdio.h>
+
+  class RCObject {
+  public:
+    void add_reference();
+    void remove_reference();
+    void mark_unshareable();
+    bool is_shareable() const;
+    bool is_shared() const;
+
+  protected:
+    RCObject();
+    RCObject(const RCObject& rhs);
+    RCObject& operator=(const RCObject& rhs);
+    virtual ~RCObject() = 0;
+
+  private:
+    int refcount;
+    bool shareable;
+  };
+
+  RCObject::RCObject() : refcount(0), shareable(true) {}
+
+  RCObject::RCObject(const RCObject& rhs) : refcount(0), shareable(true) {}
+
+  RCObject& RCObject::operator=(const RCObject& rhs) { return *this; }
+
+  RCObject::~RCObject() {}
+
+  void RCObject::add_reference() { ++refcount; }
+
+  void RCObject::remove_reference() { if (--refcount == 0) delete this; }
+
+  void RCObject::mark_unshareable() { shareable = false; }
+
+  bool RCObject::is_shareable() const { return shareable; }
+
+  bool RCObject::is_shared() const { return refcount > 1; }
+
+  // ----------------------------------------------------------------------------
+
+  template <class T>
+  class RCPtr {
+  public:
+    RCPtr(T* real_ptr = 0);
+    RCPtr(const RCPtr& rhs);
+    ~RCPtr();
+    RCPtr& operator=(const RCPtr& rhs);
+    T* operator->() const;
+    T& operator*() const;
+
+  private:
+    T* pointee;
+    void init();
+  };
+
+  template<class T>
+  RCPtr<T>::RCPtr(T* real_ptr) : pointee(real_ptr) { init(); }
+
+  template<class T>
+  RCPtr<T>::RCPtr(const RCPtr& rhs) : pointee(rhs.pointee) { init(); }
+
+  template<class T>
+  RCPtr<T>::~RCPtr() {
+    if (pointee)
+      pointee->remove_reference();
+  }
+
+  template<class T>
+  RCPtr<T>& RCPtr<T>::operator=(const RCPtr& rhs) {
+    if (pointee != rhs.pointee) {
+      if (pointee) {
+        pointee->remove_reference();
+      }
+
+      pointee = rhs.pointee;
+      init();
+    }
+
+    return *this;
+  }
+
+  template<class T>
+  T* RCPtr<T>::operator->() const { return pointee; }
+
+  template<class T>
+  T& RCPtr<T>::operator*() const { return *pointee; }
+
+  template<class T>
+  void RCPtr<T>::init() {
+    if (pointee == 0)
+      return;
+
+    if (pointee->is_shareable() == false)
+      pointee = new T(*pointee);
+
+    pointee->add_reference();
+  }
+
+  // ----------------------------------------------------------------------------
+
+  class String {
+  public:
+    String(const char* str = "");
+    const char& operator[](int index) const;
+    char& operator[](int index);
+
+  private:
+    struct StringValue : public RCObject {
+      char* data;
+      StringValue(const char* str);
+      StringValue(const StringValue& rhs);
+      void init(const char* str);
+      ~StringValue();
+    };
+
+    RCPtr<StringValue> value;
+  };
+
+  String::StringValue::StringValue(const char* str) { init(str); }
+
+  String::StringValue::StringValue(const StringValue& rhs) { init(rhs.data); }
+
+  void String::StringValue::init(const char* str) {
+    data = new char[strlen(str) + 1];
+    strcpy(data, str);
+  }
+
+  String::StringValue::~StringValue() { delete[] data; }
+
+  String::String(const char* str) : value(new StringValue(str)) {}
+
+  const char& String::operator[](int index) const { return value->data[index]; }
+
+  char& String::operator[](int index)
+  {
+    if (value->is_shared()) {
+      value = new StringValue(value->data);
+    }
+
+    value->mark_unshareable();
+    return value->data[index];
+  }
+
+  // ----------------------------------------------------------------------------
+
+  int main() {
+    String s1("hello");
+    // char* p = &s1[1]; // 调用 String::operator[] 重载函数，将 s1 变成了不共享
+
+    // 如果下面用 String s2 = s1; 将调用拷贝构造，而拷贝构造函数调用 init 函数真正
+    // 申请了内存，而不是之前所介绍的直接引用计数加一，所以 s2 要像这样先构造再赋值
+    String s2;
+    s2 = s1;
+
+    // 在下面这句调用之前 s1 和 s2 共享同一个内存位置，但是在调用 s1[1] 时 s1 变成了
+    // 不共享，所以再显示 &s2[1] 地址时，已经不是同一块内存了
+    printf("s1[1]: %c(%p), s2[1]: %c(%p)\n", s1[1], &s1[1], s2[1], &s2[1]);
+  }
+#+end_src
+
+会有如下的输出：
+
+#+begin_src text
+  s1[1]: e(00F96939), s2[1]: e(00F95FC1)
+#+end_src
+
+按理说此时输出中括号里的内存地址应该是一样才对，但是为什么会不一致呢？可以看代码中的注释，所以：
+
+1. 该代码不适合拷贝构造（当然后面自己可以按要求再改）。
+2. 该代码对于任何访问（读和写） ~[]~ 时均会触发写时复制，总感觉用处不大。
+
+*** 在现存类上增加引用计数
+
+代码中 ~Widget~ 就是现存类，参考此图：
+
+#+ATTR_HTML: :width 60%
+[[file:files/more_effective_cpp_item29_0.png]]
+
+#+begin_src c++
+  #include <string.h>
+  #include <stdio.h>
+
+  class RCObject {
+  public:
+    void add_reference();
+    void remove_reference();
+    void mark_unshareable();
+    bool is_shareable() const;
+    bool is_shared() const;
+
+  protected:
+    RCObject();
+    RCObject(const RCObject& rhs);
+    RCObject& operator=(const RCObject& rhs);
+    virtual ~RCObject() = 0;
+
+  private:
+    int refcount;
+    bool shareable;
+  };
+
+  RCObject::RCObject() : refcount(0), shareable(true) {}
+
+  RCObject::RCObject(const RCObject& rhs) : refcount(0), shareable(true) {}
+
+  RCObject& RCObject::operator=(const RCObject& rhs) { return *this; }
+
+  RCObject::~RCObject() {}
+
+  void RCObject::add_reference() { ++refcount; }
+
+  void RCObject::remove_reference() { if (--refcount == 0) delete this; }
+
+  void RCObject::mark_unshareable() { shareable = false; }
+
+  bool RCObject::is_shareable() const { return shareable; }
+
+  bool RCObject::is_shared() const { return refcount > 1; }
+
+  // ----------------------------------------------------------------------------
+
+  template <class T>
+  class RCIPtr {
+  public:
+    RCIPtr(T* real_ptr = 0);
+    RCIPtr(const RCIPtr& rhs);
+    ~RCIPtr();
+
+    RCIPtr& operator=(const RCIPtr& rhs);
+
+    T* operator->() const;
+    T& operator*() const;
+
+    // for access to is_shared
+    RCObject& get_rcobject() { return *counter; }
+
+  private:
+    struct CounterHolder : public RCObject {
+      ~CounterHolder() { delete pointee; }
+      T* pointee;
+    };
+
+    CounterHolder* counter;
+
+    void init();
+  };
+
+  template<class T>
+  RCIPtr<T>::RCIPtr(T* real_ptr) : counter(new CounterHolder) {
+    counter->pointee = real_ptr;
+    init();
+  }
+
+  template<class T>
+  RCIPtr<T>::RCIPtr(const RCIPtr& rhs) : counter(rhs.counter) { init(); }
+
+  template<class T>
+  RCIPtr<T>::~RCIPtr() { counter->remove_reference(); }
+
+  template<class T>
+  RCIPtr<T>& RCIPtr<T>::operator=(const RCIPtr& rhs) {
+    if (counter != rhs.counter) {
+      counter->remove_reference();
+      counter = rhs.counter;
+      init();
+    }
+    return *this;
+  }
+
+  template<class T>
+  T* RCIPtr<T>::operator->() const { return counter->pointee; }
+
+  template<class T>
+  T& RCIPtr<T>::operator*() const { return *(counter->pointee); }
+
+  template<class T>
+  void RCIPtr<T>::init() {
+    if (counter->is_shareable() == false) {
+      T* old_value = counter->pointee;
+      counter = new CounterHolder;
+      counter->pointee = old_value ? new T(*old_value) : 0;
+    }
+    counter->add_reference();
+  }
+
+  // ----------------------------------------------------------------------------
+
+  class Widget {
+  public:
+    Widget(int size = 0) : m_size(size) {}
+
+    void do_this() { printf("Widget::do_this\n"); }
+    void show_that() { printf("Widget::show_that: %d\n", m_size); }
+
+  private:
+    int m_size;
+  };
+
+  class RCWidget {
+  public:
+    RCWidget(int size = 0) : value(new Widget(size)) {}
+
+    void do_this() {
+      if (value.get_rcobject().is_shared()) // 如果是共享的则写时复制
+        value = new Widget(*value);
+      value->do_this();
+    }
+
+    void show_that() { return value->show_that(); }
+
+  private:
+    RCIPtr<Widget> value;
+  };
+
+  // ----------------------------------------------------------------------------
+
+  int main() {
+    RCWidget rcw1(3), rcw2;
+    rcw2.show_that();
+    rcw2 = rcw1; // 此时两个对象共享同一块内存
+    rcw2.show_that();
+    rcw2.do_this(); // 写时复制，新开辟内存
+    rcw2.show_that();
+  }
+#+end_src
+
 * Footnotes
 
 [fn:1] 也可以不用 \under{} 这种形式，用 #+OPTIONS: ^:nil 来代替。
