@@ -115,7 +115,8 @@ When you're writing a copying function, be sure to (1) copy all local data membe
 
 * More Effective C++: 35 New Ways to Improve Your Programs and Designs
 
-** <2024-10-31 周四> Item 29: Reference counting
+<<item_m29>>
+** <2024-10-31 周四> Item M29：引用计数
 
 *** Copy-on-Write
 
@@ -398,6 +399,7 @@ When you're writing a copying function, be sure to (1) copy all local data membe
 
 按理说此时输出中括号里的内存地址应该是一样才对，但是为什么会不一致呢？可以看代码中的注释，所以：
 
+<<cow_issue>>
 1. 该代码不适合拷贝构造（当然后面自己可以按要求再改）。
 2. 该代码对于任何访问（读和写） ~[]~ 时均会触发写时复制，总感觉用处不大。
 
@@ -555,6 +557,255 @@ When you're writing a copying function, be sure to (1) copy all local data membe
     rcw2.show_that();
   }
 #+end_src
+
+** <2024-11-01 周五> Item M30：代理类
+
+*** 区分通过 ~operator[]~ 进行的是读操作还是写操作
+
+这节就是我最想了解的内容，因为没有[[item_m29][“Item M29：引用计数”]]的基础，所以先去学了这节，下面这段话正我的感受，见“[[cow_issue][感觉用处不大]]”：
+
+#+begin_quote
+在 ~Item M29~ 中，我们屈从了这种不令人满意的状态，并 *保守地假设所有的 ~operator[]~ 调用都是写操作* 。这次，我们不会这么轻易放弃的。
+#+end_quote
+
+#+begin_quote
+注意， ~operator[]~ 的 ~const~ 版本返回一个 ~const~ 的 ~proxy~ 对象。因为 ~CharProxy::operator=~ 是个非 ~const~ 的成员函数，这样的 ~proxy~ 对象不能作赋值的目标使用。因此，不管是从 ~operator[]~ 的 ~const~ 版本返回的 ~proxy~ 对象，还是它所扮演的字符都不能作左值使用。
+#+end_quote
+
+这句话我是这么理解的，对于 ~proxy~ 代理类（即 ~CharProxy~ ），它的 ~CharProxy::operator=~ 如下：
+
+#+begin_src c++
+  CharProxy& operator=(const CharProxy& rhs);
+  CharProxy& operator=(char c);
+#+end_src
+
+它们不是 ~const~ 函数（因为函数签名结尾没有 ~const~ ），所以通过 ~const String::CharProxy String::operator[](int index) const;~ 函数返回的 ~const~ 对象不能做为左值使用。
+
+实现代码：
+
+#+begin_src c++
+  #include <string.h>
+  #include <stdio.h>
+  #include <iostream>
+
+  class RCObject {
+  public:
+    void add_reference();
+    void remove_reference();
+    void mark_unshareable();
+    bool is_shareable() const;
+    bool is_shared() const;
+
+  protected:
+    RCObject();
+    RCObject(const RCObject& rhs);
+    RCObject& operator=(const RCObject& rhs);
+    virtual ~RCObject() = 0;
+
+  private:
+    int refcount;
+    bool shareable;
+  };
+
+  RCObject::RCObject() : refcount(0), shareable(true) {}
+
+  RCObject::RCObject(const RCObject& rhs) : refcount(0), shareable(true) {}
+
+  RCObject& RCObject::operator=(const RCObject& rhs) { return *this; }
+
+  RCObject::~RCObject() {}
+
+  void RCObject::add_reference() { ++refcount; }
+
+  void RCObject::remove_reference() { if (--refcount == 0) delete this; }
+
+  void RCObject::mark_unshareable() { shareable = false; }
+
+  bool RCObject::is_shareable() const { return shareable; }
+
+  bool RCObject::is_shared() const { return refcount > 1; }
+
+  // ----------------------------------------------------------------------------
+
+  template <class T>
+  class RCPtr {
+  public:
+    RCPtr(T* real_ptr = 0);
+    RCPtr(const RCPtr& rhs);
+    ~RCPtr();
+    RCPtr& operator=(const RCPtr& rhs);
+    T* operator->() const;
+    T& operator*() const;
+
+  private:
+    T* pointee;
+    void init();
+  };
+
+  template<class T>
+  RCPtr<T>::RCPtr(T* real_ptr) : pointee(real_ptr) { init(); }
+
+  template<class T>
+  RCPtr<T>::RCPtr(const RCPtr& rhs) : pointee(rhs.pointee) { init(); }
+
+  template<class T>
+  RCPtr<T>::~RCPtr() {
+    if (pointee)
+      pointee->remove_reference();
+  }
+
+  template<class T>
+  RCPtr<T>& RCPtr<T>::operator=(const RCPtr& rhs) {
+    if (pointee != rhs.pointee) {
+      if (pointee) {
+        pointee->remove_reference();
+      }
+
+      pointee = rhs.pointee;
+      init();
+    }
+
+    return *this;
+  }
+
+  template<class T>
+  T* RCPtr<T>::operator->() const { return pointee; }
+
+  template<class T>
+  T& RCPtr<T>::operator*() const { return *pointee; }
+
+  template<class T>
+  void RCPtr<T>::init() {
+    if (pointee == 0)
+      return;
+
+    if (pointee->is_shareable() == false)
+      pointee = new T(*pointee);
+
+    pointee->add_reference();
+  }
+
+  // ----------------------------------------------------------------------------
+
+  class String {
+  public:
+    String(const char* str = "");
+    // const char& operator[](int index) const;
+    // char& operator[](int index);
+
+  public:
+    class CharProxy {
+    public:
+      CharProxy(String& str, int index);
+      CharProxy& operator=(const CharProxy& rhs);
+      CharProxy& operator=(char c);
+      operator char() const;
+
+    private:
+      String& the_string;
+      int char_index;
+    };
+
+    const CharProxy operator[](int index) const; // for const Strings
+    CharProxy operator[](int index); // for non-const Strings
+
+    friend class CharProxy;
+
+  private:
+    struct StringValue : public RCObject {
+      char* data;
+      StringValue(const char* str);
+      StringValue(const StringValue& rhs);
+      void init(const char* str);
+      ~StringValue();
+    };
+
+    RCPtr<StringValue> value;
+  };
+
+  String::CharProxy::CharProxy(String& str, int index)
+    : the_string(str), char_index(index) {}
+
+  String::CharProxy& String::CharProxy::operator=(const CharProxy& rhs) {
+    if (the_string.value->is_shared()) {
+      the_string.value = new StringValue(the_string.value->data);
+    }
+
+    the_string.value->data[char_index] = rhs.the_string.value->data[rhs.char_index];
+    return *this;
+  }
+
+  String::CharProxy& String::CharProxy::operator=(char c) {
+    if (the_string.value->is_shared()) {
+      the_string.value = new StringValue(the_string.value->data);
+    }
+
+    the_string.value->data[char_index] = c;
+    return *this;
+  }
+
+  String::CharProxy::operator char() const {
+    // 值返回，C++ 规定值返回的对象只能做为右值使用
+    return the_string.value->data[char_index];
+  }
+
+  String::StringValue::StringValue(const char* str) { init(str); }
+
+  String::StringValue::StringValue(const StringValue& rhs) { init(rhs.data); }
+
+  void String::StringValue::init(const char* str) {
+    data = new char[strlen(str) + 1];
+    strcpy(data, str);
+  }
+
+  String::StringValue::~StringValue() { delete[] data; }
+
+  String::String(const char* str) : value(new StringValue(str)) {}
+
+  const String::CharProxy String::operator[](int index) const {
+    return CharProxy(const_cast<String&>(*this), index);
+  }
+
+  String::CharProxy String::operator[](int index) {
+    return CharProxy(*this, index);
+  }
+
+  // ----------------------------------------------------------------------------
+
+  int main() {
+    String s1("hello");
+    String s2;
+    s2 = s1;
+    std::cout << s1[1] << ", " << s2[1] << '\n';
+    s2[1] = 'a';
+    std::cout << s1[1] << ", " << s2[1] << '\n';
+    s2[1] = s1[4];
+    std::cout << s1[1] << ", " << s2[1] << '\n';
+
+    // 如何用 C 语言方式则必须要强转为 char，否则输出乱码
+    printf("%c\n", (char)s1[1]);
+    // 如果用 C 语言方式，现在不能取地址了，error C2102: '&' requires l-value
+    // 正如文章中所说的，[] 是值返回，它是右值，而右值根本取不了地址
+    // printf("%p\n", &s1[1]);
+  }
+#+end_src
+
+大概都懂了，用了 ~CharProxy~ 确实不错，其实就是： _将原来 ~StringValue~ 的 ~operator[]~ 重载操作放到的代理类的 ~operator=~ 中了。_
+
+代码解析：
+
+1. ~operator[]~ 是值返回，只能做为右值，所以对于读操作，有 ~operator char()~ 重载就可以返回字符了。
+2. 对于写操作就要用到 ~=~ ，所以 ~operator=~ 中的操作就要写时复制了。
+
+*** 代理类的局限性
+
+这里提到的局限性比如不能取地址（当然可以重载 ~operator&~ 啦），不能写成 ~int_array[5] += 5;~ 之类的等等问题，同时还有正如我在前几行（往上看）代码注释中提到的“强转成 ~char~ ，否则输出乱码”中提到的一样，有了代理类，隐式转化的效果也没了。
+
+*** 评述
+
+#+begin_quote
+代理类可以完成一些其它方法很难甚至不可能实现的行为。多维数组是一个例子，左/右值的区分是第二个，限制隐式类型转换（见 ~Item M5~ ）是第三个。同时，代理类也有缺点。作为函数返回值，代理对象是临时对象（见 ~Item 19~ ），它们必须被构造和析构。这不是免费的，虽然此付出能从具备了区分读写的能力上得到更多的补偿。代理对象的存在增加了软件的复杂度，因为额外增加的类使得事情更难设计、实现、理解和维护。
+#+end_quote
 
 * Footnotes
 
